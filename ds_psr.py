@@ -284,6 +284,22 @@ class SecSpec(object):
 class Spec(object):
     '''Spectrum object'''
     def __init__(self, I, t, f, stend=[0.0,1.0], nI=None, tel='Unknown', psr='PSRJ0337+1715',pad_it=True, npad=3, ns_info='no noise'):
+        '''class to manipilate dynamic spectra
+        Usually initiated from npz file using function load_triple_spectra,
+        but it can aslo be cropped from other Spec object
+        or constracted manualy. While initiated it automatically creates secondary spectra, thus requiring decision about padding.
+  
+        I - dynamic spectra (2D float array)
+        t, f - time and frequency axes (astropy.units quantities)
+        stend - start and end of the observation in mjd (astropy.Time object)
+        nI - array of noise in dynamic spectra
+
+        tel - Observatory with which the data was obtained (if known)
+        psr - pulsar name of the object (if known)
+        pad_it  - whether to pad the secondary spectra with zeros
+        npad - (int) number of paded zeros 
+        ns_info - whether noise data is present or not
+        '''
         self.I = I
         self.t = t
         self.f = f
@@ -310,20 +326,25 @@ class Spec(object):
         mjd_c=(self.stend[1]+self.stend[0])/2.
         return "<Dynamic spectrum: Dur: %.2f hr, Freq: %.2f - %2.f MHz, MJD: %.2f, PSR: %s, Tel: %s, %s>"%(times,np.amin(self.f).value, np.amax(self.f).value, mjd_c, self.psr, self.tel, self.nsinfo)
     def plot_ds(self, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None):
+        '''Plots ds with pre-defined settings. (see fun_plot_ds)'''
         fun_plot_ds(self.I, self.t, self.f,new_fig=new_fig,figsize=figsize, dpi= dpi, vmin=vmin, vmax=vmax)
     def plot_nds(self, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None):
+        '''Plots noise of the dynamic spectra same way as plot_ds. (see plot_ds)'''
         fun_plot_ds(self.nI, self.t, self.f,new_fig=new_fig,figsize=figsize, dpi= dpi, vmin=vmin, vmax=vmax)
         
     def make_ss(self, pad_it=True, npad=3):
+        '''Makes secondary spectra and  loads it to SecSpec object'''
         Is, tau, fd=fun_make_ss(self.I, self.t, self.f, pad_it=pad_it, npad=npad)
         return SecSpec(self, Is, tau, fd)   
 
  
     def plot_ss(self,fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, vmax=None, new_fig=True, figsize=(3,2), dpi=150, cb=True):
+        '''Plots secondary spectra with pre-defined plotting settings'''
         fun_plot_ss(self.ss.Is, self.ss.tau, self.ss.fd, fd_lim=fd_lim, tau_lim=tau_lim, vmin=vmin, vmax=vmax, new_fig=new_fig,
                 figsize=figsize, dpi=dpi, cb=cb)
 
     def select(self, time_sel=None, freq_sel=None, freq_idx=None, time_idx=None, pad_it=True, npad=3):
+        '''Crops a piece of ds as a sepatate Spec object'''
         if (time_sel is not None) and (time_sel[0].unit == u.s):
             time_axis=self.t
             I_sel, sec_sel, f_sel, t_idx, f_idx, nI_sel=fun_select(self.I,time_axis,self.f, time_sel=time_sel,
@@ -342,6 +363,7 @@ class Spec(object):
         return Spec(I=I_sel, t=sec_sel, f=f_sel, stend=[mjd_sel[0].value,mjd_sel[-1].value+mjd_bin.value], nI=nI_sel,tel=self.tel, psr=self.psr, pad_it=pad_it, npad=npad)
 
     def interp(self, t_ed, f_ed, t_len, f_len, pad_it=True, npad=3):
+        '''Interpolates given ds to a new grid in time and frequency as well as new range'''
         I_new, f_new, t_sec_new, t_int, nI_new=fun_interp(self.I, self.mjd.mjd, self.f,
                                                   t_ed=t_ed, f_ed=f_ed, t_len=t_len, f_len=f_len,
                                                   pad_it=pad_it, npad=npad, ns=self.nI)
@@ -351,6 +373,7 @@ class Spec(object):
         return new_spec
 
     def get_noise(self):
+        '''Calculates noise level in ds using Daniel method'''
         temp=np.fft.fftshift(np.abs(np.fft.fft2(self.I.T)/np.sqrt(self.I.T.shape[0]*self.I.T.shape[1]))**2)
         N=np.sqrt(temp[:temp.shape[0]//6,:temp.shape[1]//6].mean())
         return N
