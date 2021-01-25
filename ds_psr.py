@@ -175,7 +175,16 @@ def find_edges(I_cross, fd_cross, tau_cross, fd_lim, tau_lim):
 
 
 def crop_array(my_array, idx=None, values=None):
-    if idx is not None and values is not None:
+    '''Crops array in time and frequency (given by values of time and/or frequency) or by indexes of the array
+    Takes:
+    array -  (1D array), (astropy quantity with units)
+    values - (astropy units quantites) [q,q] - min and max of values to cut the array with. 
+    idx - [int,int] - index edges to crop array to
+    Returns:
+    res_array - cropped 1D array
+    res_idx - indexes to which it was cropped
+    '''
+   if idx is not None and values is not None:
         raise ValueError("Both selection chosen! Choose one: based either on index or value!")
     elif values is not None:
         if (values[0].unit != my_array.unit) or (values[0].unit != my_array.unit):
