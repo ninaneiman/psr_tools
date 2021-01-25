@@ -154,7 +154,7 @@ def fun_plot_ss(Is, tau, fd, fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, v
     plt.xlim(fd_lim[0], fd_lim[1])
     plt.ylim(tau_lim[0], tau_lim[1])
 
- def find_nearest(array, value):
+def find_nearest(array, value):
     '''Finds index of the nearest to value number in an array
     Takes: 
     array - (np.array(dtype=float)) array with numbers
@@ -184,7 +184,7 @@ def crop_array(my_array, idx=None, values=None):
     res_array - cropped 1D array
     res_idx - indexes to which it was cropped
     '''
-   if idx is not None and values is not None:
+    if idx is not None and values is not None:
         raise ValueError("Both selection chosen! Choose one: based either on index or value!")
     elif values is not None:
         if (values[0].unit != my_array.unit) or (values[0].unit != my_array.unit):
@@ -231,7 +231,7 @@ def fun_select(ds,t,f, time_sel=None, freq_sel=None, freq_idx=None, time_idx=Non
     return I_sel, t_sel, f_sel, t_idx, f_idx, nI_sel
 
 def fun_interp(ds, mjd, f, t_ed, f_ed, t_len, f_len, ns=None):
-     '''Interpolates ds to a new time and frequency axis
+    '''Interpolates ds to a new time and frequency axis
     Takes:
     ds - dynamic spectrum (2D array)
     mjd - time axis in mjd (astropy time object)
