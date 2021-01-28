@@ -21,7 +21,7 @@ import ththmod as THTH
 np.seterr(divide='ignore', invalid='ignore')
 
 
-def load_triple_spectrum(name='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO_1400_ds.npz',factor=[1,1], tel='Undefined', psr='PSRJ0337+1715', pad_it=True, npad=3, mean0=True, wnoise=False):
+def load_triple_spectrum(name='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO_1400_ds.npz',factor=[1,1], tel='Undefined', psr='PSRJ0337+1715', pad_it=True, npad=3, mean0=True, wnoise=True):
     ''' load  data from npz file into Spec object using load_data module
     Takes:
     filenpz - name of the npz file to load data from
@@ -348,12 +348,12 @@ class Spec(object):
         if (time_sel is not None) and (time_sel[0].unit == u.s):
             time_axis=self.t
             I_sel, sec_sel, f_sel, t_idx, f_idx, nI_sel=fun_select(self.I,time_axis,self.f, time_sel=time_sel,
-                                                     freq_sel=freq_sel, freq_idx=freq_idx,time_idx=time_idx, ns=self.nI)
+                              freq_sel=freq_sel, freq_idx=freq_idx,time_idx=time_idx, ns=self.nI)
             mjd_sel=self.mjd.mjd[t_idx[0]:t_idx[1]]*u.d
         if (time_sel is not None) and (time_sel[0].unit == u.d):
             time_axis=self.mjd.mjd * u.d
             I_sel, mjd_sel, f_sel, t_idx, f_idx, nI_sel=fun_select(self.I,time_axis,self.f, time_sel=time_sel,
-                                                     freq_sel=freq_sel, freq_idx=freq_idx,time_idx=time_idx, ns=self.nI)
+                              freq_sel=freq_sel, freq_idx=freq_idx,time_idx=time_idx, ns=self.nI)
             sec_sel=self.t[t_idx[0]:t_idx[1]]
         
         mjd_bin=mjd_sel[1]-mjd_sel[0]

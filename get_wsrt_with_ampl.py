@@ -13,11 +13,11 @@ templ='/export/astron/archibald/projects/triplesystem/processing/template-work/5
 #obs_dir='/data/archibald/0337+1715/obs/56412.76_GBT_1400/singlefrequency/zap_*.ar'
 obs_dir='/data/archibald/0337+1715/obs/'
 
-obs=['56087.23_WSRT_1400','56087.33_WSRT_1400','56091.21_WSRT_1400','56091.35_WSRT_1400','56098.46_WSRT_1400','56098.59_WSRT_1400','56105.32_WSRT_1400','56105.41_WSRT_1400','56106.18_WSRT_1400','56110.21_WSRT_1400','56110.31_WSRT_1400']
+obs=['56071.30_WSRT_1400','56087.23_WSRT_1400','56087.33_WSRT_1400','56091.21_WSRT_1400','56091.35_WSRT_1400','56098.46_WSRT_1400','56098.59_WSRT_1400','56105.32_WSRT_1400','56105.41_WSRT_1400','56106.18_WSRT_1400','56110.21_WSRT_1400','56110.31_WSRT_1400']
 
 obss=np.load('onetotwo_obs.npz')
 #observations=[obss['name'][0]]
-observations=[obs[0]]
+observations=obs
 #observations=['56025.74_WSRT_1400', '56025.79_AO_1400','56039.69_GBT_1400', '56039.72_AO_1400']  
 print observations
 processing_name='tuned2'
@@ -87,14 +87,16 @@ for obs in observations:
             a_t = (np.arange(d.shape[0]) * ntbin)
             a_f = np.linspace(center_frequency-bw/2,center_frequency+bw/2, d.shape[1])
 
-
             dprof = (d*w[...,None]).mean(axis=(0,1))#here used to be sum instead of mean
             #phase = template_match.align_profile(t_values, dprof)
             phase, amp, bg = template_match.align_scale_profile(t_values, dprof)
 
             tz = template_match.rotate_phase(t_values,phase)
-            tz -= tz.mean()
-            d -= d.mean(axis=-1, keepdims=True)
+            my_templ=np.copy(tz)
+            my_data=np.copy(d)
+            
+            #tz -= tz.mean()
+            #d -= d.mean(axis=-1, keepdims=True)
 
             tz_sc=tz*amp+bg
             variance=np.var(d-tz_sc, axis=-1, keepdims=True)
@@ -126,6 +128,6 @@ for obs in observations:
         #plt.ylabel("f (MHz)")
         #plt.show()
  
-        np.savez(newname+'_wnoise', ds=np.array(ds), mjd=np.array([start_mjd,end_mjd]),c_fr=center_frequency, bw_fr=bw, noise=np.array(noise_sp), templ=tz, dprof=dprof, phase=phase, amp=amp, bg=bg)
+        np.savez(newname+'_wnoise', ds=np.array(ds), mjd=np.array([start_mjd,end_mjd]),c_fr=center_frequency, bw_fr=bw, noise=np.array(noise_sp), templ=my_templ, dprof=dprof, phase=phase, amp=amp, bg=bg)
 
 #

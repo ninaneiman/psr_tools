@@ -116,7 +116,7 @@ def shrink(array, factor=[1,1,1,1], size=None):
     return nnnnew_data
 
 
-def load_triple(filenpz='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO_1400_ds.npz',factor=[1,1], mean0=True, wnoise=False):
+def load_triple(filenpz='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO_1400_ds.npz',factor=[1,1], mean0=True, wnoise=True):
     '''loads ds data from npz file, downsamples it, subtructs mean (if applied) and loads noise data if present (and applied)
     Takes:
     filenpz - name of the npz file to load data from
@@ -128,7 +128,7 @@ def load_triple(filenpz='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO
     ds - dynamic spectra (2D array)
     t - time axis (astropy units quantity)
     f - frequency axis (astropy units quantity)
-    ns - noise of dynamic spectra'''
+    ns - noise of dynamic spectra (2D array)'''
     triple_ds=np.load(filenpz)
     print (triple_ds['ds'].shape)
     ds=triple_ds['ds']
@@ -138,11 +138,10 @@ def load_triple(filenpz='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO
         ns=np.random.normal(size=np.shape(ds))*np.std(ds)/6
     if 'WSRT' in filenpz:
         ds=shrink_2(ds, factor=factor, size=None)
-        ns=shrink_2(ns, factor=factor, size=None)
-
+        ns=shrink_2(ns, factor=factor, size=None)/np.sqrt(factor[0]*factor[1])
     if mean0 is True:
         ds=ds-ds.mean()
-        ns=ns-ns.mean()
+        ns=ns-ds.mean()
     end_mjd=triple_ds['mjd'][1]
     start_mjd=triple_ds['mjd'][0]
     center_frequency=triple_ds['c_fr']
