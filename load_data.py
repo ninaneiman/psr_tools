@@ -20,7 +20,7 @@ def shrink_any_2(array, factor=[1,1]):
     takes: 2D-array (array) and factors (factor) by which to downsample that array in each axis
     factor -(int) number of pixels to average
     returns: downsampled 2D array'''
-    #ideally need error function for factor to always be factor of 2
+    factor=np.array(factor, dtype=int)
     
     size0=array.shape[0]//factor[0]
     size1=array.shape[1]//factor[1]
@@ -45,6 +45,7 @@ def shrink_any_2(array, factor=[1,1]):
 
 def shrink_any_1(axis, factor):
     '''Downsamples 1-D array same way as shrink_any_2'''
+    factor=int(factor)
     new_len=len(axis)-len(axis)%factor
     new_size=len(axis)//factor
     cr_axis=axis[:new_len]
