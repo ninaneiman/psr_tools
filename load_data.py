@@ -13,20 +13,13 @@ import astropy
 from matplotlib.colors import LogNorm
 import matplotlib as mpl
 
-def factor_of_two(x, n=5, odd=True):                                                                                                                                                    
+def factor_of_two(x, n=5, odd=True):
     '''finds closest smaller number with enough (defined by n) factors of 2 
     takes: any number
     returns: easy factorable number by 2'''
-    x=int(x)                                                                                                                                                                            
-    if (x%2!=0) and (odd is True):                                                                                                                                                      
-        x=x-1                                                                                                                                                                           
-    os.system("factor %d > numout.txt"%x)                                                                                                                                               
-    arr0=np.genfromtxt("numout.txt")                                                                                                                                                    
-    arr=arr0[1:len(arr0)]                                                                                                                                                               
-    twos=arr[(arr[:]==2)]                                                                                                                                                               
-    N=len(twos)                                                                                                                                                                         
-                                                                                                                                                                                        
-    while (N < n):
+    x=int(x)                                                                        
+    if (x%2!=0) and (odd is True):
+        x=x-1                                                                                                       os.system("factor %d > numout.txt"%x)                                                                           arr0=np.genfromtxt("numout.txt")                                                                                arr=arr0[1:len(arr0)]                                                                                           twos=arr[(arr[:]==2)]                                                                                           N=len(twos)                                                                                                     while (N < n):
         os.system("factor %d > numout.txt"%x)
         arr0=np.genfromtxt("numout.txt")
         arr=arr0[1:-1]
@@ -37,84 +30,37 @@ def factor_of_two(x, n=5, odd=True):
     return x
 
 
-def shrink_2(array, factor=[1,1], size=None):
-    '''downsamples 2D-data by a fixed factors of 2
-    takes: 2D-array (array) and factors by which to downsampe that array (factor) in each axis
-    size - the desired size in each axis (if known)
+def shrink_any_2(array, factor=[1,1]):
+    '''downsamples 2D-data
+    It takes 2D array of any size, finds the closes factorable number to desired number of averaged pixels
+    and creates new array factor of times averaged.
+    
+    it throws away pixels that is mod of array.shape[i]/factor[i]
+    takes: 2D-array (array) and factors (factor) by which to downsample that array in each axis
+    factor -(int) number of pixels to average
     returns: downsampled 2D array'''
     #ideally need error function for factor to always be factor of 2
-    if size is None:
-        size=[]
-        for j in range(0,len(factor)):
-            if factor[j]==1:
-                print (array.shape[j])
-                size.append(array.shape[j])
-            else:
-                size.append(factor_of_two(array.shape[j],n=int(math.log(factor[j],2)),odd=True))
-        size=np.array(size)
-        print (size)
-    else:
-        size=size
+    
+    size0=array.shape[0]//factor[0]
+    size1=array.shape[1]//factor[1]
+    
+    new_shape0=array.shape[0]-array.shape[0]%factor[0]
+    new_shape1=array.shape[1]-array.shape[1]%factor[1]
 
-    new_data=np.zeros((int(size[0]/factor[0]),array.shape[1]))
+    new_data=np.zeros((size0,array.shape[1]))
     print (new_data.shape)
-    for i in range(0,size[0],factor[0]):
-        k=int(i/factor[0])-1
+    for i in range(0,new_shape0,factor[0]):
+        k=i//factor[0]
         new_data[k,:]=np.mean(array[i:i+factor[0],:],axis=0)
     array=new_data
 
-    nnew_data=np.zeros((array.shape[0],int(size[1]/factor[1])))
-    for i in range(0,size[1],factor[1]):
-        k=int(i/factor[1])
+    nnew_data=np.zeros((array.shape[0],size1))
+    for i in range(0,new_shape1,factor[1]):
+        k=i//factor[1]
         nnew_data[:,k]=np.mean(array[:,i:i+factor[1]],axis=1)
     array=nnew_data
 
     return nnew_data
-
-def shrink(array, factor=[1,1,1,1], size=None):
-    '''downsamples 4D-data by a fixed factors of 2
-    takes: 4D-array (array) and factors by which to downsampe that array (factor) in each axis
-    size - the desired size in each axis(if known)
-    returns: downsampled 4D array'''
-    #ideally need error function for factor to always be factor of 2
-    if size is None:
-        size=[]
-        for j in range(0,4):
-            if factor[j]==1:
-                size.append(array.shape[j])
-            else:
-                size.append(factor_of_two(array.shape[j],n=int(math.log(factor[j],2)),odd=True))
-        size=np.array(size)
-        print (size)
-    else:
-        size=size
-    
-    
-    new_data=np.zeros((int(size[0]/factor[0]),array.shape[1],array.shape[2],array.shape[3]))
-    print (new_data.shape)
-    for i in range(0,size[0]-factor[0],factor[0]):
-        k=int(i/factor[0])
-        new_data[k,:,:,:]=np.mean(array[i:i+factor[0],:,:,:],axis=0)
-    array=new_data
-    
-    nnew_data=np.zeros((array.shape[0],int(size[1]/factor[1]),array.shape[2],array.shape[3]))
-    for i in range(0,size[1],factor[1]):
-        k=int(i/factor[1])
-        nnew_data[:,k,:,:]=np.mean(array[:,i:i+factor[1],:,:],axis=1)
-    array=nnew_data
-    
-    nnnew_data=np.zeros((array.shape[0],array.shape[1],int(size[2]/factor[2]),array.shape[3]))
-    for i in range(0,size[2],factor[2]):
-        k=int(i/factor[2])
-        nnnew_data[:,:,k,:]=np.mean(array[:,:,i:i+factor[2],:],axis=2)
-    array=nnnew_data
-    
-    nnnnew_data=np.zeros((array.shape[0],array.shape[1],array.shape[2],int(size[3]/factor[3])))
-    for i in range(0,size[3],factor[3]):
-        k=int(i/factor[3])
-        nnnnew_data[:,:,:,k]=np.mean(array[:,:,:,i:i+factor[3]],axis=3)
-    return nnnnew_data
-
 
 def load_triple(filenpz='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO_1400_ds.npz',factor=[1,1], mean0=True, wnoise=True):
     '''loads ds data from npz file, downsamples it, subtructs mean (if applied) and loads noise data if present (and applied)
@@ -137,11 +83,10 @@ def load_triple(filenpz='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO
     else:
         ns=np.random.normal(size=np.shape(ds))*np.std(ds)/6
     if 'WSRT' in filenpz:
-        ds=shrink_2(ds, factor=factor, size=None)
-        ns=shrink_2(ns, factor=factor, size=None)/np.sqrt(factor[0]*factor[1])
+        ds=shrink_any_2(ds, factor=factor)
+        ns=shrink_any_2(ns, factor=factor)/np.sqrt(factor[0]*factor[1])
     if mean0 is True:
         ds=ds-ds.mean()
-        ns=ns-ds.mean()
     end_mjd=triple_ds['mjd'][1]
     start_mjd=triple_ds['mjd'][0]
     center_frequency=triple_ds['c_fr']

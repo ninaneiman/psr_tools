@@ -360,7 +360,7 @@ class Spec(object):
         I_sel = self.I[t_idx[0]:t_idx[1],f_idx[0]:f_idx[1]]
         nI_sel = self.nI[t_idx[0]:t_idx[1],f_idx[0]:f_idx[1]]
 
-        return Spec(I=I_sel, t=sec_sel, f=f_sel, stend=[mjd_sel[0].value,mjd_sel[-1].value+mjd_bin.value], nI=nI_sel,tel=self.tel, psr=self.psr, pad_it=pad_it, npad=npad)
+        return Spec(I=I_sel, t=sec_sel, f=f_sel, stend=[mjd_sel[0].value,mjd_sel[-1].value+mjd_bin.value], nI=nI_sel,tel=self.tel, psr=self.psr, pad_it=pad_it, npad=npad, ns_info=self.nsinfo)
 
     def interp(self, t_ed, f_ed, t_len, f_len, pad_it=True, npad=3):
         '''Interpolates given ds to a new grid in time and frequency as well as new range'''
@@ -377,5 +377,6 @@ class Spec(object):
         temp=np.fft.fftshift(np.abs(np.fft.fft2(self.I.T)/np.sqrt(self.I.T.shape[0]*self.I.T.shape[1]))**2)
         N=np.sqrt(temp[:temp.shape[0]//6,:temp.shape[1]//6].mean())
         return N
+    def 
 
 
