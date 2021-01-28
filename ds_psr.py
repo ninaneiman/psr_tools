@@ -14,11 +14,8 @@ import matplotlib as mpl
 from scipy.sparse.linalg import eigsh
 from scipy.optimize import curve_fit
 import load_data as ld
-
-
-sys.path.insert(1, '/home/gusinskaia/scintools/scintools')
 import ththmod as THTH
-np.seterr(divide='ignore', invalid='ignore')
+#np.seterr(divide='ignore', invalid='ignore')
 
 
 def load_triple_spectrum(name='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO_1400_ds.npz',factor=[1,1], tel='Undefined', psr='PSRJ0337+1715', pad_it=True, npad=3, mean0=True, wnoise=True):
@@ -61,6 +58,15 @@ def ext_find(x,y):
     dy=np.diff(y).mean()
     ext=[(x[0]-dx/2).value,(x[-1]+dx/2).value,(y[0]-dy/2).value,(y[-1]+dy/2).value]
     return(ext)
+
+
+def fun_shrink_ds(ds,t,f,factor=[1,1]):
+    '''Downsamples ds, t, and f by ant integer factors'''
+    new_ds=ld.shrink_any_2(ds, factor=factor)
+    new_t=ld.shrink_any_1(t, factor[0])
+    new_f=ld.shrink_any_1(f, factor[1])
+    return new_ds, new_t, new_f
+
 
 def fun_plot_ds_woaxis(ds, t, f, fig=plt.figure(figsize=(3,8), dpi=150), rect=[0.0,0.0,1.0,1.0]):
     '''function that plots ds inside a given axis. The purpose is to avoid wasting time setting parameters right.
@@ -362,6 +368,13 @@ class Spec(object):
 
         return Spec(I=I_sel, t=sec_sel, f=f_sel, stend=[mjd_sel[0].value,mjd_sel[-1].value+mjd_bin.value], nI=nI_sel,tel=self.tel, psr=self.psr, pad_it=pad_it, npad=npad, ns_info=self.nsinfo)
 
+    def shrink(self, factor=[1,1], pad_it=True, npad=3):
+        ds, t, f=fun_shrink_ds(self.I, self.t, self.f, factor=factor)
+        ns=ld.shrink_any_2(self.nI, factor=factor)
+        mjd=ld.shrink_any_1(self.mjd.mjd, factor=factor[0])
+        mjd_bin=mjd[1]-mjd[0]
+        return Spec(I=ds, t=t, f=f, stend=[mjd[0],mjd[-1]+mjd_bin], nI=ns,tel=self.tel, psr=self.psr, pad_it=pad_it, npad=npad, ns_info=self.nsinfo)
+
     def interp(self, t_ed, f_ed, t_len, f_len, pad_it=True, npad=3):
         '''Interpolates given ds to a new grid in time and frequency as well as new range'''
         I_new, f_new, t_sec_new, t_int, nI_new=fun_interp(self.I, self.mjd.mjd, self.f,
@@ -376,7 +389,6 @@ class Spec(object):
         '''Calculates noise level in ds using Daniel method'''
         temp=np.fft.fftshift(np.abs(np.fft.fft2(self.I.T)/np.sqrt(self.I.T.shape[0]*self.I.T.shape[1]))**2)
         N=np.sqrt(temp[:temp.shape[0]//6,:temp.shape[1]//6].mean())
-        return N
-    def 
+        return N 
 
 

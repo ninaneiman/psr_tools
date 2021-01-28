@@ -6,29 +6,10 @@ import os, sys, math, time
 from scipy import interpolate
 from astropy.time import Time
 from astropy.visualization import quantity_support
-
 from astropy import constants as const
-
 import astropy
 from matplotlib.colors import LogNorm
 import matplotlib as mpl
-
-def factor_of_two(x, n=5, odd=True):
-    '''finds closest smaller number with enough (defined by n) factors of 2 
-    takes: any number
-    returns: easy factorable number by 2'''
-    x=int(x)                                                                        
-    if (x%2!=0) and (odd is True):
-        x=x-1                                                                                                       os.system("factor %d > numout.txt"%x)                                                                           arr0=np.genfromtxt("numout.txt")                                                                                arr=arr0[1:len(arr0)]                                                                                           twos=arr[(arr[:]==2)]                                                                                           N=len(twos)                                                                                                     while (N < n):
-        os.system("factor %d > numout.txt"%x)
-        arr0=np.genfromtxt("numout.txt")
-        arr=arr0[1:-1]
-        twos=arr[(arr[:]==2)]
-        N=len(twos)
-        x=x-2
-    print (arr)
-    return x
-
 
 def shrink_any_2(array, factor=[1,1]):
     '''downsamples 2D-data
@@ -48,7 +29,6 @@ def shrink_any_2(array, factor=[1,1]):
     new_shape1=array.shape[1]-array.shape[1]%factor[1]
 
     new_data=np.zeros((size0,array.shape[1]))
-    print (new_data.shape)
     for i in range(0,new_shape0,factor[0]):
         k=i//factor[0]
         new_data[k,:]=np.mean(array[i:i+factor[0],:],axis=0)
@@ -59,8 +39,18 @@ def shrink_any_2(array, factor=[1,1]):
         k=i//factor[1]
         nnew_data[:,k]=np.mean(array[:,i:i+factor[1]],axis=1)
     array=nnew_data
+    print (array.shape)
+    return array
 
-    return nnew_data
+
+def shrink_any_1(axis, factor):
+    '''Downsamples 1-D array same way as shrink_any_2'''
+    new_len=len(axis)-len(axis)%factor
+    new_size=len(axis)//factor
+    cr_axis=axis[:new_len]
+    new_axis = np.linspace(np.amin(cr_axis),np.amax(cr_axis), new_size)
+    return new_axis
+
 
 def load_triple(filenpz='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO_1400_ds.npz',factor=[1,1], mean0=True, wnoise=True):
     '''loads ds data from npz file, downsamples it, subtructs mean (if applied) and loads noise data if present (and applied)
