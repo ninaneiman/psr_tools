@@ -47,7 +47,7 @@ def dveff_to_eta(dveff, spec):
 
 
 def daniel_pars_fit(spec, curv_par='eta', etas_pars=[0.25,5.5,0.25], edge=1.4,ntau=512,
-                       d_eff=1300*u.pc, npoints=100, chi2_method='Nina'):
+                       d_eff=0.325*u.kpc, npoints=100, chi2_method='Nina', reduced=True):
     print ('fit:', spec)
     etas_init=np.arange(etas_pars[0],etas_pars[1],etas_pars[2])
     edges=np.linspace(-edge,edge,ntau)
@@ -72,8 +72,7 @@ def daniel_pars_fit(spec, curv_par='eta', etas_pars=[0.25,5.5,0.25], edge=1.4,nt
         etas2=dveff_to_eta(pars2, spec)
     
     chisq=np.zeros(pars2.shape[0])
-    thth_reds0=np.zeros(pars2.shape[0])
-    thth_reds1=np.zeros(pars2.shape[0])
+    ntheta_reds=np.zeros(pars2.shape[0])
     N=spec.get_noise()
     edges=np.linspace(-edge,edge,ntau)
     mask=np.ones(spec.I.T.shape,dtype=bool)
@@ -84,7 +83,7 @@ def daniel_pars_fit(spec, curv_par='eta', etas_pars=[0.25,5.5,0.25], edge=1.4,nt
         if chi2_method == 'Daniel':
             chisq[i]=THTH.chisq_calc(spec.I.T,spec.ss.Is, spec.ss.tau, spec.ss.fd, eta, edges,mask,N)
         if chi2_method == 'Nina':
-            chisq[i], thth_reds0[i], thth_reds1[i]=nina_get_chi2_spec(spec, eta, edge, ntau)
+            chisq[i], ntheta_reds[i] = nina_get_chi2_spec(spec, eta, edge, ntau, reduced=reduced)
 
     ##Fit for a parabola around the minimum
     p_min=pars2[chisq==chisq.min()][0]
@@ -139,27 +138,33 @@ def daniel_pars_fit(spec, curv_par='eta', etas_pars=[0.25,5.5,0.25], edge=1.4,nt
               'dveff_err':dveff_sig, 'mean_f':np.mean(spec.f), 'mean_t':np.mean(spec.mjd.mjd)}
     
     res_dic={'par_array':pars2, 'fit_array':pars_fit, 'chi2':measure, 'fit_res':popt,
-              'par_fit':par_fit, 'par_sig':par_sig, 'thth_reds0':thth_reds0, 'thth_reds1':thth_reds1, 'mean_f':np.mean(spec.f), 'mean_t':np.mean(spec.mjd.mjd)}
+              'par_fit':par_fit, 'par_sig':par_sig, 'ntheta_red':ntheta_reds, 'mean_f':np.mean(spec.f), 'mean_t':np.mean(spec.mjd.mjd)}
     return fitdic, np.mean(spec.f), np.mean(spec.mjd.mjd), res_dic
 
 
-def nina_get_chi2_spec(spec, eta, edge=1.4, ntau=512, fd2=None,tau2=None, plot_mds=False):
-    chisq=nina_get_chi2(spec.I, spec.ss.Is, spec.ss.tau, spec.ss.fd, eta, edge, ntau, fd2, tau2, plot_mds, spec.nI)
+def nina_get_chi2_spec(spec, eta, edge=1.4, ntau=512, fd2=None,tau2=None, plot_mds=False, reduced=True):
+    chisq=nina_get_chi2(spec.I, spec.ss.Is, spec.ss.tau, spec.ss.fd, eta, edge, ntau, fd2, tau2, plot_mds, spec.nI, reduced=reduced)
     return chisq
 
-def nina_get_chi2(ds, SS,tau,fd, eta, edge=1.4, ntau=512, fd2=None,tau2=None, plot_mds=False, ns=None):
+def nina_get_chi2(ds, SS,tau,fd, eta, edge=1.4, ntau=512, fd2=None,tau2=None, plot_mds=False, ns=None,
+reduced=True):
     edges=np.linspace(-edge,edge,ntau) 
     thth_red,thth2_red,recov,model,edges_red,w,V=THTH.modeler(SS,tau,fd, eta, edges, fd2, tau2)
-    ndof=ds.shape[1]*ds.shape[0]-thth_red.shape[0] - 2
+    emin, emax=np.amin(edges_red), np.amax(edges_red)
+    c=([(tau.value > emin)&(tau.value < emax) ])
+    tau_red=tau[c]
+    ndof=ds.size-tau_red.shape[0]*2-2#/(SS.shape[0]/ds.shape[1]) - 2
+    #ndof=ds.size-thth_red.shape[0]*2 - 2
     if ns is None:
         ns=np.random.normal(size=np.shape(ds))*np.std(ds)/6
     if plot_mds is True:
         vmin, vmax=np.percentile(model, [1,99])
         plt.imshow(model, aspect='auto', vmin=vmin, vmax=vmax, origin='lower')
         plt.show()
-    #chisq=(((model[:ds.T.shape[0],:ds.T.shape[1]]-ds.T)**2).sum()/np.std(ns)**2)/ndof
-    thth_red0=thth_red.shape[0]
-    thth_red1=thth_red.shape[1]
-    chisq=((model[:ds.T.shape[0],:ds.T.shape[1]]-ds.T)**2).mean()/np.std(ns)**2
-    return(chisq,thth_red0, thth_red1)
+    chisq=((model[:ds.T.shape[0],:ds.T.shape[1]]-ds.T)**2).sum()/np.mean(ns)**2
+    if reduced is True:
+        chisq=chisq/ndof
+    #ntheta_red=thth_red.shape[0]
+    ntheta_red=tau_red.shape[0]*2/(SS.shape[0]/ds.shape[1])
+    return(chisq,ntheta_red)
 

@@ -22,6 +22,15 @@ import ththmod as THTH
 np.seterr(divide='ignore', invalid='ignore')
 
 
+
+##Function for making extent tuple for plotting
+def ext_find(x,y):
+    '''function from Daniels code'''
+    dx=np.diff(x).mean()
+    dy=np.diff(y).mean()
+    ext=[(x[0]-dx/2).value,(x[-1]+dx/2).value,(y[0]-dy/2).value,(y[-1]+dy/2).value]
+    return(ext)
+
 def recover_phases(dspec,time,freq,SS,fd,tau,edges,eta_fit):
     thth_red, thth2_red, recov, model, edges_red,w,V = THTH.modeler(SS, tau, fd, eta_fit, edges)
     eta=eta_fit
@@ -50,11 +59,15 @@ def get_models(sp_part, eta_fit=1.6*u.us/(u.mHz**2), edge=1.0,ntau=512):
     edges=np.linspace(-edge,edge,ntau)
     n_ds,n_t,n_f,p_sec,p_fd,p_tau=sp_part.I, sp_part.t, sp_part.f, sp_part.ss.Is, sp_part.ss.fd, sp_part.ss.tau
     model_E, model_ds,model_ss, model_field=recover_phases(n_ds.T,n_t,n_f,p_sec,p_fd,p_tau, edges,eta_fit)
-    N=np.std(sp_part.nI)
+    N=np.mean(sp_part.nI)
     chi2=((sp_part.I-model_ds.T)**2).mean()/N**2
     return model_E.T, model_ds.T,np.flip(model_ss, axis=1), np.flip(model_field, axis=1), chi2
 
-
+def get_models_spec(sp_part, eta_fit=1.6*u.us/(u.mHz**2), edge=1.0,ntau=512):
+    model_E, model_ds, model_ss, model_field, chi2 = get_models(sp_part, eta_fit=eta_fit, edge=edge,ntau=ntau)
+    model_spec=ModelSpec(eta=eta_fit, mI=model_ds, mIs=model_ss, mE=model_E, mEs=model_field,
+                                     spec=sp_part)
+    return model_spec
 
 class ModelSpec(object):
     def __init__(self, eta, mI, mIs, mE, mEs, spec):
@@ -93,7 +106,7 @@ class ModelSpec(object):
         if fd_lim is None:
             fd_lim=np.array([self.fd[0].value,self.fd[-1].value])
 
-        plt.imshow(np.abs(self.mIs)**2.,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext)
+        plt.imshow(np.abs(self.mIs)**2.,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower')
         plt.xlabel(self.fd.unit.to_string('latex'))
         plt.ylabel(self.tau.unit.to_string('latex'))
         if cb is True:
@@ -133,11 +146,11 @@ class ModelSpec(object):
 def plot_etas(dic, new_fig=True, figsize=(4,3), dpi=150):
     if new_fig is True:
         plt.figure(figsize=figsize, dpi=dpi)
-    etas=dic['pars']
-    measure=dic['measure']
+    etas=dic['par_array']
+    measure=dic['chi2']
     eta_fit=dic['par_fit']
     fit_res=dic['fit_res']
-    etas_fit=dic['fit_pars']
+    etas_fit=dic['fit_array']
     eta_sig=dic['par_sig']
 
     plt.plot(etas,measure)

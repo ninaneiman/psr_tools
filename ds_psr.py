@@ -96,7 +96,7 @@ def fun_plot_ds(ds, t, f, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=
     	plt.figure(figsize=figsize, dpi=dpi)
     if (vmin is None) and (vmax is None):
         vmin,vmax = np.percentile(ds,[1,99])
-    plt.imshow(ds.T,extent=(0,(t[-1].value-t[0].value)/3600.,np.amin(f).value,np.amax(f).value),
+    plt.imshow(ds.T,extent=(0,(t[-1].to(u.hr).value-t[0].to(u.hr).value),np.amin(f).value,np.amax(f).value),
            vmin=vmin, vmax=vmax, aspect='auto', origin='lower')
     plt.xlabel('Time (hr)')
     plt.ylabel('Frequency (%s)'%f.unit.to_string('latex'))
@@ -378,9 +378,7 @@ class Spec(object):
     def interp(self, t_ed, f_ed, t_len, f_len, pad_it=True, npad=3):
         '''Interpolates given ds to a new grid in time and frequency as well as new range'''
         I_new, f_new, t_sec_new, t_int, nI_new=fun_interp(self.I, self.mjd.mjd, self.f,
-                                                  t_ed=t_ed, f_ed=f_ed, t_len=t_len, f_len=f_len,
-                                                  pad_it=pad_it, npad=npad, ns=self.nI)
-
+                                     t_ed=t_ed, f_ed=f_ed, t_len=t_len, f_len=f_len, ns=self.nI)
         new_spec=Spec(I=I_new, t=t_sec_new, f=f_new*u.MHz, stend=[t_ed[0].value,t_ed[1].value], nI=nI_new,
                         tel=self.tel, psr=self.psr, pad_it=pad_it, npad=npad)
         return new_spec
