@@ -21,12 +21,13 @@ sys.path.insert(1, '/home/gusinskaia/scintools/scintools')
 import ththmod as THTH
 np.seterr(divide='ignore', invalid='ignore')
 
-
+import load_data as ld
+import ds_psr as dsa
+import fit_thth as fth
+import models_thth as mth
 
 def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', etas_pars=[0.5,7.5,0.25],
-                      pc7=False, load_model=False, eta_ref=None, ref_freq=None, edge=1.4, time_lim=2.0,
-                           save_models=False, wnoise=False,
-                    d_eff=1300*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise'):
+                      pc7=False, pc_overlap=False,load_model=False, eta_ref=None, ref_freq=None, edge=1.4, time_lim=2.0,save_models=False, wnoise=False, d_eff=0.35*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise'):
     if spec_pieces=='Default':
         if pc7 is True:
             spec_pieces=np.array([[1312,1328],[1332,1348],[1352,1368],[1372,1388],[1392,1408],
@@ -36,6 +37,8 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', etas_pars=[0.
                       [1401,1417],[1421,1437],[1441,1457]])
     else:
         spec_pieces=spec_pieces
+    if pc_overlap is True:
+        spec_pieces=np.array([[1301,1337],[1321,1357],[1341,1377],[1361,1397],[1381,1417],[1401,1437],[1421,1457]])
     res_fit, res_f, res_t, dics_res, all_models =[],[],[],[],[]
     f = open("etas_results_fit_%.2f_%s.txt"%(my_spec.stend[0],saveauxname), "a")
     dics_res_a=[]
@@ -134,7 +137,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', etas_pars=[0.
 
     fig.add_axes([2.3,0.006+0.125*4,0.3, 0.15])
     frame1=plt.gca()
-    chi2sg=np.zeros((8,100))
+    chi2sg=np.empty((len(dics_res_a),100))
     for g in range(0,len(dics_res_a)):
         chi2sg[g,:]=dics_res_a[g]['chi2']
         plt.plot(dics_res_a[g]['par_array'],dics_res_a[g]['chi2'], label ='%.2f MHz'%res_f_a[g].value)

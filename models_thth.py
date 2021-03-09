@@ -157,6 +157,6 @@ def plot_etas(dic, new_fig=True, figsize=(4,3), dpi=150):
     if not np.isnan(eta_fit):
         plt.plot(etas_fit,
             THTH.chi_par(etas_fit.value, *fit_res),
-            label=r'$\eta$ = %.1f $\pm$ %.1f $s^3$' % (eta_fit.value, eta_sig.value))
+            label=r'x = %.1f $\pm$ %.1f' % (eta_fit.value, eta_sig.value))
         plt.legend(fontsize=8, loc='upper center')
 
