@@ -122,25 +122,29 @@ class ModelSpec(object):
         plt.xlabel('Time (hr)')
         plt.ylabel('Frequency (%s)'%self.f.unit.to_string())
     def plot_mes(self,fd_lim=[-1.5,1.5],tau_lim=[0.0,1.4],vmin=None,vmax=None,vv_default=True, cb=True,new_fig=True, figsize=(3,3),dpi=150):
-        if new_fig is True:
-            plt.figure(figsize=figsize, dpi=dpi)
-        SS_ext=ext_find(self.fd,self.tau)
-        if vmin is None and vv_default is True:
-            vmin=np.median(np.abs(self.mEs[(self.mEs!=0)]))*5
-        if vmax is None and vv_default is True:
-            vmax=np.max(np.abs(self.mEs[(self.mEs!=0)]))*np.exp(-2.7)*5
-        if tau_lim is None:
-            tau_lim=np.array([self.tau[0].value,self.tau[-1].value])
-        if fd_lim is None:
-            fd_lim=np.array([self.fd[0].value,self.fd[-1].value])
+        fun_plot_mes(self.mEs, self.fd, self.tau, fd_lim=fd_lim, tau_lim=tau_lim, vmin=vmin, vmax=vmax, vv_default=vv_default, cb=cb,new_fig=new_fig,figsize=figsize, dpi=dpi)
 
-        plt.imshow(self.mEs,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower')
-        plt.xlabel(self.fd.unit.to_string('latex'))
-        plt.ylabel(self.tau.unit.to_string('latex'))
-        if cb is True:
-            plt.colorbar()
-        plt.xlim(fd_lim)
-        plt.ylim(tau_lim)
+
+def fun_plot_mes(mEs,fd,tau,fd_lim=[-1.5,1.5],tau_lim=[0.0,1.4],vmin=None,vmax=None,vv_default=True, cb=True,new_fig=True, figsize=(3,3),dpi=150):
+    if new_fig is True:
+        plt.figure(figsize=figsize, dpi=dpi)
+    SS_ext=ext_find(fd,tau)
+    if vmin is None and vv_default is True:
+        vmin=np.median(np.abs(mEs[(mEs!=0)]))*5
+    if vmax is None and vv_default is True:
+        vmax=np.max(np.abs(mEs[(mEs!=0)]))*np.exp(-2.7)*5
+    if tau_lim is None:
+        tau_lim=np.array([tau[0].value,tau[-1].value])
+    if fd_lim is None:
+        fd_lim=np.array([fd[0].value,fd[-1].value])
+
+    plt.imshow(mEs,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower')
+    plt.xlabel(fd.unit.to_string('latex'))
+    plt.ylabel(tau.unit.to_string('latex'))
+    if cb is True:
+        plt.colorbar()
+    plt.xlim(fd_lim)
+    plt.ylim(tau_lim)
 
 
 def plot_etas(dic, new_fig=True, figsize=(4,3), dpi=150):

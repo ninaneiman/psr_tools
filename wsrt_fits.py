@@ -43,6 +43,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
     f = open("etas_results_fit_%.2f_%s.txt"%(my_spec.stend[0],saveauxname), "a")
     dics_res_a=[]
     res_f_a=[]
+    models_e_a=[]
 
     fig=plt.figure(figsize=figsize, dpi= 70, facecolor='w', edgecolor='k')
     fig.add_axes([0.0,0.0,0.25,1.0])
@@ -95,6 +96,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
                    'm_err: %.3f'%fitdic['mueff_err'].value, fitdic['mueff'].unit, 
                    'v_err: %.3f'%fitdic['dveff_err'].value, fitdic['dveff'].unit)
             model_spec=mth.get_models_spec(spec_sel, fitdic['eta'],edge=edge,ntau=512)
+            models_e_a.append(model_spec.mE.T)
             
             fig.add_axes([0.3,0.006+0.125*i,0.25, 0.105])
             frame1=plt.gca()
@@ -128,24 +130,34 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
                 aux_name='fullmodel_%.1f'%fitdic['eta'].value
         print ('----------')
 
-    fig.add_axes([2.2,0.6,0.3, 0.15])
+    fig.add_axes([2.2,0.625,0.25, 0.125])
     frame1=plt.gca()
     chi2sg=np.empty((len(dics_res_a),100))
     for g in range(0,len(dics_res_a)):
         chi2sg[g,:]=dics_res_a[g]['chi2']
         plt.plot(dics_res_a[g]['par_array'],dics_res_a[g]['chi2'], label ='%.2f MHz'%res_f_a[g].value)
-        plt.legend(loc=(0.0,1.7))
-    fig.add_axes([2.2,0.4,0.3, 0.15])
+        plt.legend(loc=(0.0,1.1))
+    fig.add_axes([2.2,0.45,0.25, 0.125])
     frame1=plt.gca()
     sim_fit = fth.parabola_fit(dics_res_a[0]['par_array'],chi2sg.mean(0))
-    plt.plot(dics_res_a[0]['par_array'],chi2sg.mean(0), label='x=%.1f pm %.1f'%(sim_fit[0], sim_fit[1]))
-
-    fig.add_axes([2.2,0.2,0.3, 0.15])
+    plt.plot(dics_res_a[0]['par_array'],chi2sg.mean(0), label='x=%.1f pm %.1f'%(sim_fit[0].value, sim_fit[1].value))
+    plt.legend(fontsize=8, loc='upper center')
+    fig.add_axes([2.2,0.26,0.25, 0.15])
     frame1=plt.gca()
     my_spec.plot_ss(new_fig=False, cb=False, fd_lim=[-2.0,2.0], tau_lim=[0.0,1.3],vmin=1e7,vmax=5e8)
-
-    fig.add_axes([2.2,0.006,0.3, 0.15])
-    frame1=plt.gca()
+    if pc_overlap is True:
+        chunks=np.zeros((len(models_e_a),1,models_e_a[0].shape[0],models_e_a[0].shape[1]),dtype=complex)
+        for h in range(0,len(models_e_a)):
+            chunks[h,0,:,:]=models_e_a[h]
+        full_mE=THTH.mosaic(chunks)
+        npad=3
+        full_mE_pad=np.pad(full_mE.T,((0,npad*full_mE.T.shape[0]),(0,npad*full_mE.T.shape[1])),mode='constant',
+                        constant_values=full_mE.T.mean())
+        full_mE=full_mE_pad.T
+        full_mEs=np.abs(np.fft.fftshift(np.fft.fft2(full_mE)))**2
+        fig.add_axes([2.2,0.026,0.25, 0.15])
+        frame1=plt.gca()
+        mth.fun_plot_mes(full_mEs, my_spec.ss.fd, my_spec.ss.tau, new_fig=False, cb=False)
 
     plt.savefig('triple_%.2f_%s_%s_%s.png'%(my_spec.stend[0],my_spec.tel,aux_name,saveauxname),
                 format='png',bbox_inches='tight',dpi=90)
