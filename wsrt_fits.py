@@ -94,10 +94,6 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
             print ('e_err: %.3f'%fitdic['eta_err'].value, fitdic['eta'].unit,
                    'm_err: %.3f'%fitdic['mueff_err'].value, fitdic['mueff'].unit, 
                    'v_err: %.3f'%fitdic['dveff_err'].value, fitdic['dveff'].unit)
-            #print ('e_err:', fitdic['eta_err'], 'm_err:', fitdic['mueff_err'], 'v_err:',  fitdic['dveff_err'])
-
-            #model_E, model_ds, model_ss, model_field, chi2 = model.get_models(spec_sel, fitdic['eta'],
-            #                                                                edge=edge,ntau=512)
             model_spec=mth.get_models_spec(spec_sel, fitdic['eta'],edge=edge,ntau=512)
             
             fig.add_axes([0.3,0.006+0.125*i,0.25, 0.105])
@@ -120,32 +116,37 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
             model_spec.plot_mes(new_fig=False, cb=False)
             frame1.axes.get_xaxis().set_ticks([])
             frame1.axes.get_yaxis().set_ticks([])
-            fig.add_axes([1.95,0.006+0.125*i,0.2, 0.105])
+            fig.add_axes([1.85,0.006+0.125*i,0.2, 0.105])
             if save_models is True:
                 all_models.append(model_spec)
             if load_model is False:
                 frame1=plt.gca()
                 mth.plot_etas(dic_res,new_fig=False)
                 frame1.axes.get_xaxis().set_ticks([])
-                #frame1.axes.get_yaxis().set_ticks([])
-                #frame1.axes.set_ylim(0.980,0.998)
-                #frame1.axes.set_yscale('log')
                 aux_name='fullfit'
             else:
                 aux_name='fullmodel_%.1f'%fitdic['eta'].value
         print ('----------')
 
-    fig.add_axes([2.3,0.006+0.125*4,0.3, 0.15])
+    fig.add_axes([2.2,0.6,0.3, 0.15])
     frame1=plt.gca()
     chi2sg=np.empty((len(dics_res_a),100))
     for g in range(0,len(dics_res_a)):
         chi2sg[g,:]=dics_res_a[g]['chi2']
         plt.plot(dics_res_a[g]['par_array'],dics_res_a[g]['chi2'], label ='%.2f MHz'%res_f_a[g].value)
         plt.legend(loc=(0.0,1.7))
-    fig.add_axes([2.3,0.006+0.125*2,0.3, 0.15])
+    fig.add_axes([2.2,0.4,0.3, 0.15])
     frame1=plt.gca()
     sim_fit = fth.parabola_fit(dics_res_a[0]['par_array'],chi2sg.mean(0))
-    plt.plot(dics_res_a[0]['par_array'],chi2sg.mean(0), label='x=%.1f pm %.1f'%(sim_fit, sim_sig))
+    plt.plot(dics_res_a[0]['par_array'],chi2sg.mean(0), label='x=%.1f pm %.1f'%(sim_fit[0], sim_fit[1]))
+
+    fig.add_axes([2.2,0.2,0.3, 0.15])
+    frame1=plt.gca()
+    my_spec.plot_ss(new_fig=False, cb=False, fd_lim=[-2.0,2.0], tau_lim=[0.0,1.3],vmin=1e7,vmax=5e8)
+
+    fig.add_axes([2.2,0.006,0.3, 0.15])
+    frame1=plt.gca()
+
     plt.savefig('triple_%.2f_%s_%s_%s.png'%(my_spec.stend[0],my_spec.tel,aux_name,saveauxname),
                 format='png',bbox_inches='tight',dpi=90)
     plt.show()
