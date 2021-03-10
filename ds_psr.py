@@ -151,7 +151,7 @@ def fun_plot_ss(Is, tau, fd, fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, v
         fd_lim=np.array([fd[0].value,fd[-1].value])
     if new_fig is True:
         fig=plt.figure(figsize=figsize, dpi=dpi, facecolor='w', edgecolor='k')
-    plt.imshow(np.abs(Is)**2,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext),
+    plt.imshow(np.abs(Is)**2,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower')
     if cb is True:
         plt.colorbar()
 

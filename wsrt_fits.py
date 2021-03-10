@@ -26,8 +26,8 @@ import ds_psr as dsa
 import fit_thth as fth
 import models_thth as mth
 
-def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', etas_pars=[0.5,7.5,0.25],
-                      pc7=False, pc_overlap=False,load_model=False, eta_ref=None, ref_freq=None, edge=1.4, time_lim=2.0,save_models=False, wnoise=False, d_eff=0.35*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise'):
+def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5,5.5],
+                      pc7=False, pc_overlap=False,load_model=False, eta_ref=None, ref_freq=None, edge=1.4, time_lim=2.0,save_models=False, wnoise=False, d_eff=0.325*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise'):
     if spec_pieces=='Default':
         if pc7 is True:
             spec_pieces=np.array([[1312,1328],[1332,1348],[1352,1368],[1372,1388],[1392,1408],
@@ -63,7 +63,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', etas_pars=[0.
         frame1.axes.get_yaxis().set_ticks([])
         spec_sel.get_noise()
         if load_model is False:
-            fitdic, fit_f, fit_t, dic_res=fth.daniel_pars_fit(spec_sel, etas_pars=etas_pars,
+            fitdic, fit_f, fit_t, dic_res=fth.daniel_pars_fit(spec_sel, par_lims=par_lims,
                                                     edge=edge,ntau=512,curv_par=curv_par)
             if np.isnan(fitdic['eta']):
                 print ('the fit did not converge, not correct eta, skip this spw')

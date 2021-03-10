@@ -35,39 +35,45 @@ def mu_to_eta(mu, spec, deff):
     eta=deff*const.c/(2*c_f**2*vel**2)
     return eta.to(u.us/u.mHz**2)
 
-def eta_to_dveff(eta, spec):
-    c_f=spec.f.mean()
+def eta_to_dveff_cf(eta, c_f):
     dveff=(const.c/(2.*c_f**2.*eta))**0.5
     return dveff.decompose().to(u.km/(u.pc**0.5 *u.s))
-
-def dveff_to_eta(dveff, spec):
+def eta_to_dveff(eta, spec):
     c_f=spec.f.mean()
+    dveff=eta_to_dveff_cf(eta, c_f)
+    return dveff
+
+def dveff_to_eta_cf(dveff, c_f):
     eta=const.c/(2*c_f**2*dveff**2)
     return eta.to(u.us/u.mHz**2)
+def dveff_to_eta(dveff, spec):
+    c_f=spec.f.mean()
+    eta=dveff_to_eta_cf(dveff, c_f)
+    return eta
 
 
-def daniel_pars_fit(spec, curv_par='eta', etas_pars=[0.25,5.5,0.25], edge=1.4,ntau=512,
+
+def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512,
                        d_eff=0.325*u.kpc, npoints=100, chi2_method='Nina', reduced=True):
     print ('fit:', spec)
-    etas_init=np.arange(etas_pars[0],etas_pars[1],etas_pars[2])
-    edges=np.linspace(-edge,edge,ntau)
-    
-    eta_low=np.amin(etas_init)*u.us/(u.mHz**2)
-    eta_high=np.amax(etas_init)*u.us/(u.mHz**2)
-    
-    if curv_par=='eta':
+    edges=np.linspace(-edge,edge,ntau)    
+   
+    if curv_par=='eta': 
+        print ('Warning! Curretly the combined chi2 does not support eta as initial parameter')
+        eta_low=np.amin(par_lims)*u.us/(u.mHz**2)
+        eta_high=np.amax(par_lims)*u.us/(u.mHz**2)
         pars2=np.linspace(eta_low.value,eta_high.value,npoints)*eta_low.unit
         etas2=pars2
         
     if curv_par=='mueff':
-        mu_low=eta_to_mu(eta_high, spec, d_eff)
-        mu_high=eta_to_mu(eta_low, spec, d_eff)
+        mu_low=np.amin(par_lims)*u.mas/u.yr
+        mu_high=np.amax(par_lims)*u.mas/u.yr
         pars2=np.linspace(mu_high.value,mu_low.value,npoints)*mu_low.unit
         etas2=mu_to_eta(pars2, spec, d_eff)
 
     if curv_par=='dveff':
-        dveff_low=eta_to_dveff(eta_high, spec)
-        dveff_high=eta_to_dveff(eta_low, spec)
+        dveff_low=np.amin(par_lims)*(u.km/(u.pc**0.5 *u.s))
+        dveff_high=np.amax(par_lims)*(u.km/(u.pc**0.5 *u.s))
         pars2=np.linspace(dveff_high.value,dveff_low.value,npoints)*dveff_low.unit
         etas2=dveff_to_eta(pars2, spec)
     
