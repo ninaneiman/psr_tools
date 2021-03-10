@@ -52,6 +52,28 @@ def dveff_to_eta(dveff, spec):
     return eta
 
 
+def parabola_fit(par_array, chisq):
+    ##Fit for a parabola around the minimum
+    p_min=par_array[chisq==chisq.min()][0]
+    fit_results=chisq[np.abs(par_array-p_min)<.1*p_min]
+    C=fit_results.min()
+
+    fit_range_array=par_array[np.abs(par_array-p_min)<.1*p_min]
+    x0=fit_range_array[fit_results==C][0].value
+    A=(fit_results[0]-C)/((fit_range_array[0].value-x0)**2)
+    try:
+        popt,pcov=curve_fit(THTH.chi_par,fit_range_array.value,fit_results,p0=np.array([A,x0,C]))
+        par_fit=popt[1]*par_array.unit
+        par_sig=np.sqrt((fit_results-THTH.chi_par(fit_range_array.value,*popt)).std()/popt[0])*par_array.unit
+
+    except RuntimeError:
+        print('Fit curve didnt converge')
+        par_fit, par_sig, popt=float('nan') , 0.0*pars_fit.unit,  0.0
+    except TypeError:
+        print ('Improper input: N=3 must not exceed M=1; -- tb fixed')
+        par_fit, par_sig, popt=float('nan') , 0.0*pars_fit.unit,  0.0
+    return par_fit, par_sig, popt, fit_range_array
+
 
 def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512,
                        d_eff=0.325*u.kpc, npoints=100, chi2_method='Nina', reduced=True):
@@ -92,26 +114,8 @@ def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512
             chisq[i], ntheta_reds[i] = nina_get_chi2_spec(spec, eta, edge, ntau, reduced=reduced)
 
     ##Fit for a parabola around the minimum
-    p_min=pars2[chisq==chisq.min()][0]
-    fit_results=chisq[np.abs(pars2-p_min)<.1*p_min]
-    C=fit_results.min()
+    par_fit, par_sig, popt, fit_range_array = parabola_fit(pars2,chisq)
     measure=chisq
-        
-    pars_fit=pars2[np.abs(pars2-p_min)<.1*p_min]
-    x0=pars_fit[fit_results==C][0].value
-    A=(fit_results[0]-C)/((pars_fit[0].value-x0)**2)
-    try:
-        popt,pcov=curve_fit(THTH.chi_par,pars_fit.value,fit_results,p0=np.array([A,x0,C]))
-        par_fit=popt[1]*pars2.unit
-        par_sig=np.sqrt((fit_results-THTH.chi_par(pars_fit.value,*popt)).std()/popt[0])*pars2.unit
-
-    except RuntimeError:
-        print('Fit curve didnt converge')
-        par_fit, par_sig, popt=float('nan') , 0.0*pars_fit.unit,  0.0
-    except TypeError:
-        print ('Improper input: N=3 must not exceed M=1; -- tb fixed')
-        par_fit, par_sig, popt=float('nan') , 0.0*etas_fit.unit,  0.0
-        
 
     if np.isnan(par_fit):
         eta_fit, mueff_fit, dveff_fit=par_fit,par_fit,par_fit
@@ -143,7 +147,7 @@ def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512
     fitdic={'eta':eta_fit, 'mueff':mueff_fit, 'dveff':dveff_fit, 'eta_err':eta_sig, 'mueff_err':mueff_sig,
               'dveff_err':dveff_sig, 'mean_f':np.mean(spec.f), 'mean_t':np.mean(spec.mjd.mjd)}
     
-    res_dic={'par_array':pars2, 'fit_array':pars_fit, 'chi2':measure, 'fit_res':popt,
+    res_dic={'par_array':pars2, 'fit_array':fit_range_array, 'chi2':measure, 'fit_res':popt,
               'par_fit':par_fit, 'par_sig':par_sig, 'ntheta_red':ntheta_reds, 'mean_f':np.mean(spec.f), 'mean_t':np.mean(spec.mjd.mjd)}
     return fitdic, np.mean(spec.f), np.mean(spec.mjd.mjd), res_dic
 

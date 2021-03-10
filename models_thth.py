@@ -61,7 +61,7 @@ def get_models(sp_part, eta_fit=1.6*u.us/(u.mHz**2), edge=1.0,ntau=512):
     model_E, model_ds,model_ss, model_field=recover_phases(n_ds.T,n_t,n_f,p_sec,p_fd,p_tau, edges,eta_fit)
     N=np.mean(sp_part.nI)
     chi2=((sp_part.I-model_ds.T)**2).mean()/N**2
-    return model_E.T, model_ds.T,np.flip(model_ss, axis=1), np.flip(model_field, axis=1), chi2
+    return model_E.T, model_ds.T, model_ss, model_field, chi2
 
 def get_models_spec(sp_part, eta_fit=1.6*u.us/(u.mHz**2), edge=1.0,ntau=512):
     model_E, model_ds, model_ss, model_field, chi2 = get_models(sp_part, eta_fit=eta_fit, edge=edge,ntau=ntau)

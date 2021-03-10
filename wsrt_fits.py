@@ -144,12 +144,10 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
         plt.legend(loc=(0.0,1.7))
     fig.add_axes([2.3,0.006+0.125*2,0.3, 0.15])
     frame1=plt.gca()
-    plt.plot(dics_res_a[0]['par_array'],chi2sg.mean(0), label='mean')
-    plt.plot(dics_res_a[0]['par_array'],np.median(chi2sg, axis=0), label='med')
-    plt.legend(loc=(0.0,-1.7))
-    
+    sim_fit = fth.parabola_fit(dics_res_a[0]['par_array'],chi2sg.mean(0))
+    plt.plot(dics_res_a[0]['par_array'],chi2sg.mean(0), label='x=%.1f pm %.1f'%(sim_fit, sim_sig))
     plt.savefig('triple_%.2f_%s_%s_%s.png'%(my_spec.stend[0],my_spec.tel,aux_name,saveauxname),
                 format='png',bbox_inches='tight',dpi=90)
     plt.show()
     f.close()
-    return res_fit, res_f, res_t, dics_res, all_models
+    return res_fit, res_f, res_t, dics_res, all_models, sim_fit
