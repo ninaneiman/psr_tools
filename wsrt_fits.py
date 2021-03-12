@@ -27,7 +27,7 @@ import fit_thth as fth
 import models_thth as mth
 
 def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5,5.5],
-                      pc7=False, pc_overlap=False,load_model=False, eta_ref=None, ref_freq=None, edge=1.4, time_lim=2.0,save_models=False, wnoise=False, d_eff=0.325*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise'):
+                      pc7=False, pc_overlap=False,load_model=False, eta_ref=None, ref_freq=None, edge=1.4, time_lim=2.0,save_models=False, wnoise=False, d_eff=0.325*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise', chi2_method='Nina', reduced=True):
     if spec_pieces=='Default':
         if pc7 is True:
             spec_pieces=np.array([[1312,1328],[1332,1348],[1352,1368],[1372,1388],[1392,1408],
@@ -40,7 +40,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
     if pc_overlap is True:
         spec_pieces=np.array([[1301,1337],[1321,1357],[1341,1377],[1361,1397],[1381,1417],[1401,1437],[1421,1457]])
     res_fit, res_f, res_t, dics_res, all_models =[],[],[],[],[]
-    f = open("etas_results_fit_%.2f_%s.txt"%(my_spec.stend[0],saveauxname), "a")
+    f = open("thth_results_fit_%.2f_%s.txt"%(my_spec.stend[0],saveauxname), "a")
     dics_res_a=[]
     res_f_a=[]
     models_e_a=[]
@@ -65,7 +65,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
         spec_sel.get_noise()
         if load_model is False:
             fitdic, fit_f, fit_t, dic_res=fth.daniel_pars_fit(spec_sel, par_lims=par_lims,
-                                                    edge=edge,ntau=512,curv_par=curv_par)
+                                                    edge=edge,ntau=512,curv_par=curv_par, chi2_method=chi2_method, reduced=reduced)
             if np.isnan(fitdic['eta']):
                 print ('the fit did not converge, not correct eta, skip this spw')
             else:
@@ -97,12 +97,15 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
                    'v_err: %.3f'%fitdic['dveff_err'].value, fitdic['dveff'].unit)
             model_spec=mth.get_models_spec(spec_sel, fitdic['eta'],edge=edge,ntau=512)
             models_e_a.append(model_spec.mE.T)
-            
-            fig.add_axes([0.3,0.006+0.125*i,0.25, 0.105])
+            h_ds=0.105
+            if pc_overlap is True:
+                h_ds=0.23
+            fig.add_axes([0.3,0.006+0.125*i,0.25, h_ds])
             frame1=plt.gca()
             model_spec.plot_mds(new_fig=False)
             frame1.axes.get_xaxis().set_ticks([])
             frame1.axes.get_yaxis().set_ticks([])
+            plt.xlabel('')
             fig.add_axes([0.6,0.006+0.125*i,0.25, 0.105])
             frame1=plt.gca()
             model_spec.plot_me(new_fig=False)
@@ -144,20 +147,23 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
     plt.legend(fontsize=8, loc='upper center')
     fig.add_axes([2.2,0.26,0.25, 0.15])
     frame1=plt.gca()
-    my_spec.plot_ss(new_fig=False, cb=False, fd_lim=[-2.0,2.0], tau_lim=[0.0,1.3],vmin=1e7,vmax=5e8)
+    my_spec.plot_ss(new_fig=False, cb=False,vmin=1e7,vmax=5e8)
     if pc_overlap is True:
         chunks=np.zeros((len(models_e_a),1,models_e_a[0].shape[0],models_e_a[0].shape[1]),dtype=complex)
         for h in range(0,len(models_e_a)):
             chunks[h,0,:,:]=models_e_a[h]
         full_mE=THTH.mosaic(chunks)
+        fig.add_axes([0.6,0.0,0.25,1.0])
+        frame1=plt.gca()
+        plt.imshow(np.angle(full_mE), aspect='auto', origin='lower', cmap='seismic', interpolation='none') 
         npad=3
         full_mE_pad=np.pad(full_mE.T,((0,npad*full_mE.T.shape[0]),(0,npad*full_mE.T.shape[1])),mode='constant',
                         constant_values=full_mE.T.mean())
-        full_mE=full_mE_pad.T
-        full_mEs=np.abs(np.fft.fftshift(np.fft.fft2(full_mE)))**2
+        full_mE_pad=full_mE_pad.T
+        full_mEs=np.abs(np.fft.fftshift(np.fft.fft2(full_mE_pad)))**2
         fig.add_axes([2.2,0.026,0.25, 0.15])
         frame1=plt.gca()
-        mth.fun_plot_mes(full_mEs, my_spec.ss.fd, my_spec.ss.tau, new_fig=False, cb=False)
+        mth.fun_plot_mes(full_mEs, my_spec.ss.fd, my_spec.ss.tau, new_fig=False, cb=False, vmin=1e7, vmax=5e8)
 
     plt.savefig('triple_%.2f_%s_%s_%s.png'%(my_spec.stend[0],my_spec.tel,aux_name,saveauxname),
                 format='png',bbox_inches='tight',dpi=90)

@@ -68,10 +68,10 @@ def parabola_fit(par_array, chisq):
 
     except RuntimeError:
         print('Fit curve didnt converge')
-        par_fit, par_sig, popt=float('nan') , 0.0*pars_fit.unit,  0.0
+        par_fit, par_sig, popt=float('nan') , 0.0*par_array.unit,  0.0
     except TypeError:
         print ('Improper input: N=3 must not exceed M=1; -- tb fixed')
-        par_fit, par_sig, popt=float('nan') , 0.0*pars_fit.unit,  0.0
+        par_fit, par_sig, popt=float('nan') , 0.0*par_array.unit,  0.0
     return par_fit, par_sig, popt, fit_range_array
 
 
@@ -111,7 +111,7 @@ def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512
         if chi2_method == 'Daniel':
             chisq[i]=THTH.chisq_calc(spec.I.T,spec.ss.Is, spec.ss.tau, spec.ss.fd, eta, edges,mask,N)
         if chi2_method == 'Nina':
-            chisq[i], ntheta_reds[i] = nina_get_chi2_spec(spec, eta, edge, ntau, reduced=reduced)
+            chisq[i] = nina_get_chi2_spec(spec, eta, edge, ntau, reduced=reduced)
 
     ##Fit for a parabola around the minimum
     par_fit, par_sig, popt, fit_range_array = parabola_fit(pars2,chisq)
@@ -148,7 +148,7 @@ def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512
               'dveff_err':dveff_sig, 'mean_f':np.mean(spec.f), 'mean_t':np.mean(spec.mjd.mjd)}
     
     res_dic={'par_array':pars2, 'fit_array':fit_range_array, 'chi2':measure, 'fit_res':popt,
-              'par_fit':par_fit, 'par_sig':par_sig, 'ntheta_red':ntheta_reds, 'mean_f':np.mean(spec.f), 'mean_t':np.mean(spec.mjd.mjd)}
+              'par_fit':par_fit, 'par_sig':par_sig, 'mean_f':np.mean(spec.f), 'mean_t':np.mean(spec.mjd.mjd)}
     return fitdic, np.mean(spec.f), np.mean(spec.mjd.mjd), res_dic
 
 
@@ -174,7 +174,9 @@ reduced=True):
     chisq=((model[:ds.T.shape[0],:ds.T.shape[1]]-ds.T)**2).sum()/np.mean(ns)**2
     if reduced is True:
         chisq=chisq/ndof
+    else:
+        chisq=chisq/ds.size
     #ntheta_red=thth_red.shape[0]
     ntheta_red=tau_red.shape[0]*2/(SS.shape[0]/ds.shape[1])
-    return(chisq,ntheta_red)
+    return chisq
 
