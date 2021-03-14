@@ -38,7 +38,11 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
     else:
         spec_pieces=spec_pieces
     if pc_overlap is True:
-        spec_pieces=np.array([[1301,1337],[1321,1357],[1341,1377],[1361,1397],[1381,1417],[1401,1437],[1421,1457]])
+        new_sp_pieces=np.empty((spec_pieces.shape[0]-1, 2), dtype=int)
+        for i in range(0,new_sp_pieces.shape[0]):
+            new_sp_pieces[i,0]=spec_pieces[i,0]
+            new_sp_pieces[i,1]=spec_pieces[i+1,1]
+        spec_pieces=new_sp_pieces
     res_fit, res_f, res_t, dics_res, all_models =[],[],[],[],[]
     f = open("thth_results_fit_%.2f_%s.txt"%(my_spec.stend[0],saveauxname), "a")
     dics_res_a=[]
