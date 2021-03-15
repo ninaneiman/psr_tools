@@ -101,7 +101,6 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
             eta_t=np.mean(spec_sel.mjd.mjd)
             eta_load=eta
             print ('%.2f MHz'%eta_f.value, 'eta: %.3f'%eta_load.value, eta_load.unit)
-            sim_fit=None
 
         if np.isfinite(eta_load):
             model_spec=mth.get_models_spec(spec_sel, eta_load, edge=edge,ntau=512)
@@ -162,6 +161,8 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
         for h in range(0,len(models_e_a)):
             chunks[h,0,:,:]=models_e_a[h]
         full_mE=THTH.mosaic(chunks)
+        me_f= np.linspace(spec_pieces[0,0],spec_pieces[-1,-1], full_mE.shape[0]) * u.MHz
+        me_t= my_spec.t
         fig.add_axes([0.6,0.0,0.25,1.0])
         frame1=plt.gca()
         plt.imshow(np.angle(full_mE), aspect='auto', origin='lower', cmap='seismic', interpolation='none') 
@@ -169,10 +170,15 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
         full_mE_pad=np.pad(full_mE.T,((0,npad*full_mE.T.shape[0]),(0,npad*full_mE.T.shape[1])),mode='constant',
                         constant_values=full_mE.T.mean())
         full_mE_pad=full_mE_pad.T
-        full_mEs=np.abs(np.fft.fftshift(np.fft.fft2(full_mE_pad)))**2
+        me_fd=THTH.fft_axis(me_t,u.mHz,npad)
+        me_tau=THTH.fft_axis(me_f,u.us,npad)
+
+        full_mEs=np.fft.fftshift(np.fft.fft2(full_mE_pad))
         fig.add_axes([2.2,0.026,0.25, 0.15])
         frame1=plt.gca()
-        mth.fun_plot_mes(full_mEs, my_spec.ss.fd, my_spec.ss.tau, new_fig=False, cb=False, vmin=1e7, vmax=5e8)
+        mth.fun_plot_mes(np.abs(full_mEs)**2, me_fd, me_tau, new_fig=False, cb=False, vmin=1e7, vmax=5e8)
+        if load_model is True:
+            sim_fit={'mE':full_mE, 't':me_t, 'f':me_f, 'mEs':full_mEs, 'fd':me_fd, 'tau':me_tau}
 
     plt.savefig('triple_%.2f_%s_%s_%s.png'%(my_spec.stend[0],my_spec.tel,aux_name,saveauxname),
                 format='png',bbox_inches='tight',dpi=90)
