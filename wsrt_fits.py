@@ -186,3 +186,147 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
     if load_model is False:
         f.close()
     return res_fit, res_f, res_t, dics_res, all_models, sim_fit
+
+
+
+
+
+def load_wsrt_spec(my_spec, eta_ref=None, ref_freq=None,figsize=(5,7.5), spec_pieces='Default', pc_overlap=False,
+                  edge=1.4,ntau=512, save_models=False, wnoise=False, d_eff=0.325*u.kpc, saveauxname='test_wnoise',
+                 ind_mean0=True):
+    if spec_pieces=='Manual':
+        spec_pieces=np.array([[1301,1317],[1321,1337],[1341,1357],[1361,1377],[1381,1397],
+                      [1401,1417],[1421,1437],[1441,1457]])
+    else:
+        spec_pieces=my_spec.subbands
+    if pc_overlap is True:
+        new_sp_pieces=np.empty((spec_pieces.shape[0]-1, 2), dtype=int)
+        for i in range(0,new_sp_pieces.shape[0]):
+            new_sp_pieces[i,:]=[i*64,i*64+128]
+        spec_pieces=new_sp_pieces
+    models_e_a=[]
+    models_ds_a=[]
+
+    fig=plt.figure(figsize=figsize, dpi= 70, facecolor='w', edgecolor='k')
+    plt.figtext(0.9,0.95,'MJD: %.2f'%my_spec.mjd.mjd.mean(), fontsize=15)
+    dveff_here=fth.eta_to_dveff_cf(eta_ref, ref_freq)
+    plt.figtext(1.25,0.95,r'$\eta$: %.2f $s^3$, $\nu_c$: %.1f MHz'%(eta_ref.value, ref_freq.value), fontsize=15)
+    plt.figtext(1.9,0.95,'dveff:%.2f'%dveff_here.value, fontsize=15)
+    fig.add_axes([0.0,0.0,0.25,1.0])
+    shr_spec=my_spec.shrink(factor=[16,1])
+    plt.gca()
+    shr_spec.plot_ds(new_fig=False)
+    for i in range(0,spec_pieces.shape[0]):
+        spec_sel=my_spec.select(time_sel=[my_spec.stend[0]*u.d,my_spec.stend[1]*u.d],
+                                        freq_idx=[spec_pieces[i,0],spec_pieces[i,1]])
+        print ('hereeee:', spec_pieces.shape[0], np.shape(spec_sel.f), np.shape(spec_sel.t))
+
+        if ind_mean0 is True:
+            spec_sel.I=spec_sel.I-np.mean(spec_sel.I)
+            spec_sel.ss=spec_sel.make_ss(pad_it=True, npad=3)
+        
+        eta=eta_ref*(ref_freq/spec_sel.f.mean())**2
+        eta_err=0.0*eta.unit
+        eta_f=np.mean(spec_sel.f)
+        eta_t=np.mean(spec_sel.mjd.mjd)
+        eta_load=eta
+        print ('%.2f MHz'%eta_f.value, 'eta: %.3f'%eta_load.value, eta_load.unit)
+
+        model_spec=mth.get_models_spec(spec_sel, eta_load, edge=edge,ntau=512)
+        models_e_a.append(model_spec.mE.T)
+        models_ds_a.append(model_spec.mI.T)
+        h_ds=0.105
+        if pc_overlap is True:
+            h_ds=0.23
+        fig.add_axes([0.3,0.006+0.125*i,0.25, h_ds])
+        frame1=plt.gca()
+        model_spec.plot_mds(new_fig=False)
+        frame1.axes.get_xaxis().set_ticks([])
+        frame1.axes.get_yaxis().set_ticks([])
+        plt.xlabel('')
+        fig.add_axes([0.6,0.006+0.125*i,0.25, 0.105])
+        frame1=plt.gca()
+        model_spec.plot_me(new_fig=False)
+        frame1.axes.get_xaxis().set_ticks([])
+        frame1.axes.get_yaxis().set_ticks([])
+        if save_models is True:
+            all_models.append(model_spec)
+        print ('----------')
+
+    fig.add_axes([1.0,0.5,0.35,0.35])
+    frame1=plt.gca()
+    plt.title(r'Secondary spectrum of data')
+    my_spec.plot_ss(new_fig=False, cb=False,vmin=7e6,vmax=2e8)
+    plt.plot(my_spec.ss.fd,eta_load*(my_spec.ss.fd**2),'r',lw=2)
+    
+    fig.add_axes([1.4,0.5,0.35,0.35])
+    frame1=plt.gca()
+    my_spec.plot_ss(new_fig=False, cb=False,vmin=7e6,vmax=2e8)
+    
+    
+    if pc_overlap is True:
+        chunks_e=np.zeros((len(models_e_a),1,models_e_a[0].shape[0],models_e_a[0].shape[1]),dtype=complex)
+        chunks_ds=np.zeros((len(models_ds_a),1,models_ds_a[0].shape[0],models_ds_a[0].shape[1]),dtype=float)
+        
+        for h in range(0,len(models_e_a)):
+            chunks_e[h,0,:,:]=models_e_a[h]
+            chunks_ds[h,0,:,:]=models_ds_a[h]
+        full_ds=THTH.mosaic_ds(chunks_ds)    
+        full_mE=THTH.mosaic(chunks_e)
+        
+        
+        me_f= np.linspace(my_spec.f[0],my_spec.f[-1], full_mE.shape[0])
+        me_t= my_spec.t
+        fig.add_axes([0.6,0.006,0.25,0.986])
+        frame1=plt.gca()
+        plt.imshow(np.angle(full_mE), aspect='auto', origin='lower', cmap='seismic', interpolation='none')
+        fig.add_axes([0.3,0.006,0.25,0.986])
+        frame1=plt.gca()
+        dsa.fun_plot_ds(full_ds.T,me_t, me_f, new_fig=False)
+        frame1.axes.get_xaxis().set_ticks([])
+        frame1.axes.get_yaxis().set_ticks([])
+        
+        npad=3
+        full_mE_pad=np.pad(full_mE.T,((0,npad*full_mE.T.shape[0]),(0,npad*full_mE.T.shape[1])),mode='constant',
+                        constant_values=full_mE.T.mean())
+        full_mE_pad=full_mE_pad.T
+        me_fd=THTH.fft_axis(me_t,u.mHz,npad)
+        me_tau=THTH.fft_axis(me_f,u.us,npad)
+
+        full_mEs=np.fft.fftshift(np.fft.fft2(full_mE_pad))
+        fig.add_axes([1.8,0.5,0.35, 0.35])
+        frame1=plt.gca()
+        plt.title(r'recovered wavefield')
+        mth.fun_plot_mes(np.abs(full_mEs)**2, me_fd, me_tau, new_fig=False, cb=False, vmin=7e6, vmax=5e9)
+        full_models={'mE':full_mE, 't':me_t, 'f':me_f, 'mEs':full_mEs, 'fd':me_fd, 'tau':me_tau,
+                    'mds':full_ds, 'mjd':my_spec.mjd.mjd.mean()}
+
+    edges=np.linspace(-edge,edge,ntau)
+    
+    eta_thth=eta_ref*(ref_freq/me_f.mean())**2
+    print ('eta_thth:', eta_thth)
+    thth_red, thth2_red, recov, model, edges_red,w,V=THTH.modeler(full_models['mEs'],full_models['tau'],
+                                                                  full_models['fd'],eta=eta_thth, edges=edges)
+
+    fig.add_axes([0.95,0.01,0.4,0.4])
+    frame1=plt.gca()
+    plt.title(r'$\theta$-$\theta$ of wavefield')
+    plt.imshow(np.abs(thth_red)**2,norm=LogNorm(vmin=7e6, vmax=5e9))
+    frame1.axes.get_xaxis().set_ticks([])
+    frame1.axes.get_yaxis().set_ticks([])
+    fig.add_axes([1.5,0.01,0.65, 0.35])
+    frame1=plt.gca()
+    plt.title('abs ( magnifications )^2')
+    ang_sep=(edges_red[:-1]*this_spec.ss.fd.unit*(const.c/ref_freq)/(dveff_here*d_eff**0.5)).decompose()*u.rad
+    magns=np.abs(V*w)**2
+    
+    thth_dic={'ang_sep':ang_sep.to(u.mas), 'magn':magns, 'fd':edges_red[:-1], 'mjd':my_spec.mjd.mjd.mean()}
+    plt.plot(ang_sep.to(u.mas),magns)
+    plt.xlabel(r'maybe $\Delta \theta$ (mas)')
+    plt.xlim(-2.1, 2.1)
+    plt.ylim(1e4, 1e12)
+    plt.yscale('log')
+    plt.savefig('load_model_%.2f_%s_eta%.1f_%s.png'%(my_spec.mjd.mjd.mean(),my_spec.tel,eta_load.value,saveauxname),
+                format='png',bbox_inches='tight',dpi=90)
+    plt.show()
+    return (full_models, thth_dic)

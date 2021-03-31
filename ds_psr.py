@@ -202,8 +202,8 @@ def crop_array(my_array, idx=None, values=None):
         res_idx=np.sort(np.array([idx[0],idx[1]]))
     else:
         res_idx=np.array([0,len(my_array)])
-    res_array=my_array[res_idx[0]:res_idx[1]+1]
-    res_idx=[res_idx[0], res_idx[1]+1]
+    res_array=my_array[res_idx[0]:res_idx[1]]
+    res_idx=[res_idx[0], res_idx[1]]
     return res_array, res_idx
     
 def fun_select(ds,t,f, time_sel=None, freq_sel=None, freq_idx=None, time_idx=None, ns=None):
