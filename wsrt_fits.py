@@ -27,7 +27,7 @@ import fit_thth as fth
 import models_thth as mth
 
 def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5,5.5],
-                      pc7=False, pc_overlap=False,load_model=False, eta_ref=None, ref_freq=None, edge=1.4, time_lim=2.0,save_models=False, wnoise=False, d_eff=0.325*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise', chi2_method='Nina', reduced=True):
+                      pc7=False, pc_overlap=False,load_model=False, eta_ref=None, ref_freq=None, edge=1.4, ntau=512,time_lim=2.0,save_models=False, wnoise=False, d_eff=0.325*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise', chi2_method='Nina', reduced=True):
     if spec_pieces=='Manual':
         spec_pieces=np.array([[1301,1317],[1321,1337],[1341,1357],[1361,1377],[1381,1397],
                       [1401,1417],[1421,1437],[1441,1457]])
@@ -55,8 +55,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
     plt.gca()
     shr_spec.plot_ds(new_fig=False)
     for i in range(0,spec_pieces.shape[0]):
-        spec_sel=my_spec.select(time_sel=[my_spec.stend[0]*u.d,my_spec.stend[1]*u.d],
-                                        freq_sel=[spec_pieces[i,0]*u.MHz,spec_pieces[i,1]*u.MHz])
+        spec_sel=my_spec.select(freq_sel=[spec_pieces[i,0]*u.MHz,spec_pieces[i,1]*u.MHz])
 
         if ind_mean0 is True:
             spec_sel.I=spec_sel.I-np.mean(spec_sel.I)
@@ -68,7 +67,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
         frame1.axes.get_yaxis().set_ticks([])
         spec_sel.get_noise()
         if load_model is False:
-            fitdic, fit_f, fit_t, dic_res=fth.daniel_pars_fit(spec_sel, par_lims=par_lims,edge=edge,ntau=512,curv_par=curv_par, chi2_method=chi2_method, reduced=reduced)
+            fitdic, fit_f, fit_t, dic_res=fth.daniel_pars_fit(spec_sel, par_lims=par_lims,edge=edge,ntau=ntau,curv_par=curv_par, chi2_method=chi2_method, reduced=reduced)
             if np.isnan(fitdic['eta']):
                 print ('the fit did not converge, not correct eta, skip this spw')
             else:
@@ -103,7 +102,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
             print ('%.2f MHz'%eta_f.value, 'eta: %.3f'%eta_load.value, eta_load.unit)
 
         if np.isfinite(eta_load):
-            model_spec=mth.get_models_spec(spec_sel, eta_load, edge=edge,ntau=512)
+            model_spec=mth.get_models_spec(spec_sel, eta_load, edge=edge,ntau=ntau)
             models_e_a.append(model_spec.mE.T)
             h_ds=0.105
             if pc_overlap is True:
@@ -201,8 +200,9 @@ def load_wsrt_spec(my_spec, eta_ref=None, ref_freq=None,figsize=(5,7.5), spec_pi
         spec_pieces=my_spec.subbands
     if pc_overlap is True:
         new_sp_pieces=np.empty((spec_pieces.shape[0]-1, 2), dtype=int)
+        ch_sz=int(my_spec.f.size/8)
         for i in range(0,new_sp_pieces.shape[0]):
-            new_sp_pieces[i,:]=[i*64,i*64+128]
+            new_sp_pieces[i,:]=[i*ch_sz,i*ch_sz+ch_sz*2]
         spec_pieces=new_sp_pieces
     models_e_a=[]
     models_ds_a=[]
@@ -217,8 +217,7 @@ def load_wsrt_spec(my_spec, eta_ref=None, ref_freq=None,figsize=(5,7.5), spec_pi
     plt.gca()
     shr_spec.plot_ds(new_fig=False)
     for i in range(0,spec_pieces.shape[0]):
-        spec_sel=my_spec.select(time_sel=[my_spec.stend[0]*u.d,my_spec.stend[1]*u.d],
-                                        freq_idx=[spec_pieces[i,0],spec_pieces[i,1]])
+        spec_sel=my_spec.select(freq_idx=[spec_pieces[i,0],spec_pieces[i,1]])
         print ('hereeee:', spec_pieces.shape[0], np.shape(spec_sel.f), np.shape(spec_sel.t))
 
         if ind_mean0 is True:
@@ -232,7 +231,7 @@ def load_wsrt_spec(my_spec, eta_ref=None, ref_freq=None,figsize=(5,7.5), spec_pi
         eta_load=eta
         print ('%.2f MHz'%eta_f.value, 'eta: %.3f'%eta_load.value, eta_load.unit)
 
-        model_spec=mth.get_models_spec(spec_sel, eta_load, edge=edge,ntau=512)
+        model_spec=mth.get_models_spec(spec_sel, eta_load, edge=edge,ntau=ntau)
         models_e_a.append(model_spec.mE.T)
         models_ds_a.append(model_spec.mI.T)
         h_ds=0.105
@@ -317,7 +316,7 @@ def load_wsrt_spec(my_spec, eta_ref=None, ref_freq=None,figsize=(5,7.5), spec_pi
     fig.add_axes([1.5,0.01,0.65, 0.35])
     frame1=plt.gca()
     plt.title('abs ( magnifications )^2')
-    ang_sep=(edges_red[:-1]*this_spec.ss.fd.unit*(const.c/ref_freq)/(dveff_here*d_eff**0.5)).decompose()*u.rad
+    ang_sep=(edges_red[:-1]*my_spec.ss.fd.unit*(const.c/ref_freq)/(dveff_here*d_eff**0.5)).decompose()*u.rad
     magns=np.abs(V*w)**2
     
     thth_dic={'ang_sep':ang_sep.to(u.mas), 'magn':magns, 'fd':edges_red[:-1], 'mjd':my_spec.mjd.mjd.mean()}

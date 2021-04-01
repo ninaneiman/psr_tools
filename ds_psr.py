@@ -361,17 +361,31 @@ class Spec(object):
             I_sel, sec_sel, f_sel, t_idx, f_idx, nI_sel=fun_select(self.I,time_axis,self.f, time_sel=time_sel,
                               freq_sel=freq_sel, freq_idx=freq_idx,time_idx=time_idx, ns=self.nI)
             mjd_sel=self.mjd.mjd[t_idx[0]:t_idx[1]]*u.d
+            mjd_bin=mjd_sel[1]-mjd_sel[0]
+            my_stend=[mjd_sel[0].value,mjd_sel[-1].value+mjd_bin.value]
+            I_sel = self.I[t_idx[0]:t_idx[1],f_idx[0]:f_idx[1]]
+            nI_sel = self.nI[t_idx[0]:t_idx[1],f_idx[0]:f_idx[1]]
+
         if (time_sel is not None) and (time_sel[0].unit == u.d):
             time_axis=self.mjd.mjd * u.d
             I_sel, mjd_sel, f_sel, t_idx, f_idx, nI_sel=fun_select(self.I,time_axis,self.f, time_sel=time_sel,
                               freq_sel=freq_sel, freq_idx=freq_idx,time_idx=time_idx, ns=self.nI)
             sec_sel=self.t[t_idx[0]:t_idx[1]]
-        
-        mjd_bin=mjd_sel[1]-mjd_sel[0]
-        I_sel = self.I[t_idx[0]:t_idx[1],f_idx[0]:f_idx[1]]
-        nI_sel = self.nI[t_idx[0]:t_idx[1],f_idx[0]:f_idx[1]]
+            mjd_bin=mjd_sel[1]-mjd_sel[0]
+            my_stend=[mjd_sel[0].value,mjd_sel[-1].value+mjd_bin.value]
+            I_sel = self.I[t_idx[0]:t_idx[1],f_idx[0]:f_idx[1]]
+            nI_sel = self.nI[t_idx[0]:t_idx[1],f_idx[0]:f_idx[1]]
 
-        return Spec(I=I_sel, t=sec_sel, f=f_sel, stend=[mjd_sel[0].value,mjd_sel[-1].value+mjd_bin.value], nI=nI_sel,tel=self.tel, psr=self.psr, pad_it=pad_it, npad=npad, ns_info=self.nsinfo, subbands=self.subbands)
+        if (time_sel is None) and (time_idx is None):
+            time_axis=self.t
+            I_sel, mjd_sel, f_sel, t_idx, f_idx, nI_sel=fun_select(self.I,time_axis,self.f, time_sel=time_sel,
+                              freq_sel=freq_sel, freq_idx=freq_idx,time_idx=time_idx, ns=self.nI)
+            I_sel = self.I[:,f_idx[0]:f_idx[1]]
+            nI_sel = self.nI[:,f_idx[0]:f_idx[1]]
+            my_stend=self.stend
+            sec_sel=self.t
+
+        return Spec(I=I_sel, t=sec_sel, f=f_sel, stend=my_stend, nI=nI_sel,tel=self.tel, psr=self.psr, pad_it=pad_it, npad=npad, ns_info=self.nsinfo, subbands=self.subbands)
 
     def shrink(self, factor=[1,1], pad_it=True, npad=3):
         ds, t, f=fun_shrink_ds(self.I, self.t, self.f, factor=factor)
