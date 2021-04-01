@@ -83,7 +83,7 @@ def fun_plot_ds_woaxis(ds, t, f, fig=plt.figure(figsize=(3,8), dpi=150), rect=[0
     ax.set_xlabel('Time (hr)')
     ax.set_ylabel('Frequency (%s)'%f.unit.to_string('latex'))
 
-def fun_plot_ds(ds, t, f, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None):
+def fun_plot_ds(ds, t, f, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None, cmap='viridis'):
     '''function that plots ds. The purpose is to avoid wasting time setting parameters right.
     it takes:
     ds - dynamic spectrum (2D array)
@@ -97,7 +97,7 @@ def fun_plot_ds(ds, t, f, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=
     if (vmin is None) and (vmax is None):
         vmin,vmax = np.percentile(ds,[1,99])
     plt.imshow(ds.T,extent=(0,(t[-1].to(u.hr).value-t[0].to(u.hr).value),np.amin(f).value,np.amax(f).value),
-           vmin=vmin, vmax=vmax, aspect='auto', origin='lower')
+           vmin=vmin, vmax=vmax, aspect='auto', origin='lower', cmap=cmap)
     plt.xlabel('Time (hr)')
     plt.ylabel('Frequency (%s)'%f.unit.to_string('latex'))
 
@@ -126,7 +126,7 @@ def fun_make_ss(ds, t, f, pad_it=True, npad=3):
     return Is, tau, fd
 
 
-def fun_plot_ss(Is, tau, fd, fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, vmax=None, new_fig=True, figsize=(3,2), dpi=150, cb=True):
+def fun_plot_ss(Is, tau, fd, fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, vmax=None, new_fig=True, figsize=(3,2), dpi=150, cb=True, cmap='viridis'):
     ''' Plots secondary spectrum
     Takes:
     Is  - complex array- secodary specrum array
@@ -151,7 +151,7 @@ def fun_plot_ss(Is, tau, fd, fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, v
         fd_lim=np.array([fd[0].value,fd[-1].value])
     if new_fig is True:
         fig=plt.figure(figsize=figsize, dpi=dpi, facecolor='w', edgecolor='k')
-    plt.imshow(np.abs(Is)**2,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower')
+    plt.imshow(np.abs(Is)**2,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower', cmap=cmap)
     if cb is True:
         plt.colorbar()
 
@@ -240,7 +240,7 @@ def fun_interp(ds, mjd, f, t_ed, f_ed, t_len, f_len, ns=None):
     '''Interpolates ds to a new time and frequency axis
     Takes:
     ds - dynamic spectrum (2D array)
-    mjd - time axis in mjd (astropy time object)
+    mjd - time axis in mjd (not quantities!)
     f - frequency axis (astropy quantity with units)
     t_ed - (q -astropy units quantites) [q,q] - edges of the desired time axis to be interpolated to
     t_len - (int) - size of the desired time axis to be interpolated to 
@@ -336,12 +336,12 @@ class Spec(object):
         
         mjd_c=(self.stend[1]+self.stend[0])/2.
         return "<Dynamic spectrum: Dur: %.2f hr, Freq: %.2f - %2.f MHz, MJD: %.2f, PSR: %s, Tel: %s, %s>"%(times,np.amin(self.f).value, np.amax(self.f).value, mjd_c, self.psr, self.tel, self.nsinfo)
-    def plot_ds(self, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None):
+    def plot_ds(self, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None, cmap='viridis'):
         '''Plots ds with pre-defined settings. (see fun_plot_ds)'''
-        fun_plot_ds(self.I, self.t, self.f,new_fig=new_fig,figsize=figsize, dpi= dpi, vmin=vmin, vmax=vmax)
-    def plot_nds(self, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None):
+        fun_plot_ds(self.I, self.t, self.f,new_fig=new_fig,figsize=figsize, dpi= dpi, vmin=vmin, vmax=vmax, cmap=cmap)
+    def plot_nds(self, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None, cmap='viridis'):
         '''Plots noise of the dynamic spectra same way as plot_ds. (see plot_ds)'''
-        fun_plot_ds(self.nI, self.t, self.f,new_fig=new_fig,figsize=figsize, dpi= dpi, vmin=vmin, vmax=vmax)
+        fun_plot_ds(self.nI, self.t, self.f,new_fig=new_fig,figsize=figsize, dpi= dpi, vmin=vmin, vmax=vmax,cmap=cmap)
         
     def make_ss(self, pad_it=True, npad=3):
         '''Makes secondary spectra and  loads it to SecSpec object'''
@@ -349,10 +349,9 @@ class Spec(object):
         return SecSpec(self, Is, tau, fd)   
 
  
-    def plot_ss(self,fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, vmax=None, new_fig=True, figsize=(3,2), dpi=150, cb=True):
+    def plot_ss(self,fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, vmax=None, new_fig=True, figsize=(3,2), dpi=150, cb=True,cmap='viridis'):
         '''Plots secondary spectra with pre-defined plotting settings'''
-        fun_plot_ss(self.ss.Is, self.ss.tau, self.ss.fd, fd_lim=fd_lim, tau_lim=tau_lim, vmin=vmin, vmax=vmax, new_fig=new_fig,
-                figsize=figsize, dpi=dpi, cb=cb)
+        fun_plot_ss(self.ss.Is, self.ss.tau, self.ss.fd, fd_lim=fd_lim, tau_lim=tau_lim, vmin=vmin, vmax=vmax, new_fig=new_fig,figsize=figsize, dpi=dpi, cb=cb, cmap=cmap)
 
     def select(self, time_sel=None, freq_sel=None, freq_idx=None, time_idx=None, pad_it=True, npad=3):
         '''Crops a piece of ds as a sepatate Spec object'''

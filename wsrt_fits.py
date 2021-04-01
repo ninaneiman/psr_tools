@@ -27,7 +27,7 @@ import fit_thth as fth
 import models_thth as mth
 
 def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5,5.5],
-                      pc7=False, pc_overlap=False,load_model=False, eta_ref=None, ref_freq=None, edge=1.4, ntau=512,time_lim=2.0,save_models=False, wnoise=False, d_eff=0.325*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise', chi2_method='Nina', reduced=True):
+                      pc7=False, pc_overlap=False,load_model=False, eta_ref=None, ref_freq=None, edge=1.4, ntau=512,time_lim=2.0,save_models=False, wnoise=False, d_eff=0.325*u.pc, mean0=True, ind_mean0=True, curv_par='dveff', saveauxname='test_wnoise', chi2_method='Nina', reduced=True, edge_threshold=False, tau_ed=0.25):
     if spec_pieces=='Manual':
         spec_pieces=np.array([[1301,1317],[1321,1337],[1341,1357],[1361,1377],[1381,1397],
                       [1401,1417],[1421,1437],[1441,1457]])
@@ -48,7 +48,7 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
     dics_res_a=[]
     res_f_a=[]
     models_e_a=[]
-
+    vmin_ss,vmax_ss=np.percentile(np.abs(my_spec.ss.Is)**2, [10,100-5e-2])
     fig=plt.figure(figsize=figsize, dpi= 70, facecolor='w', edgecolor='k')
     fig.add_axes([0.0,0.0,0.25,1.0])
     shr_spec=my_spec.shrink(factor=[16,1])
@@ -62,12 +62,12 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
             spec_sel.ss=spec_sel.make_ss(pad_it=True, npad=3)
         fig.add_axes([0.9,0.006+0.125*i,0.25, 0.105])
         frame1=plt.gca()
-        spec_sel.plot_ss(new_fig=False, cb=False, fd_lim=[-2.0,2.0], tau_lim=[0.0,1.3],vmin=1e6,vmax=1e9)
+        spec_sel.plot_ss(new_fig=False, cb=False,fd_lim=[-2.0,2.0],tau_lim=[0.0,1.3],vmin=vmin_ss,vmax=vmax_ss)
         frame1.axes.get_xaxis().set_ticks([])
         frame1.axes.get_yaxis().set_ticks([])
         spec_sel.get_noise()
         if load_model is False:
-            fitdic, fit_f, fit_t, dic_res=fth.daniel_pars_fit(spec_sel, par_lims=par_lims,edge=edge,ntau=ntau,curv_par=curv_par, chi2_method=chi2_method, reduced=reduced)
+            fitdic, fit_f, fit_t, dic_res=fth.daniel_pars_fit(spec_sel, par_lims=par_lims,edge=edge,ntau=ntau,curv_par=curv_par, chi2_method=chi2_method, reduced=reduced, edge_threshold=edge_threshold, tau_ed=tau_ed)
             if np.isnan(fitdic['eta']):
                 print ('the fit did not converge, not correct eta, skip this spw')
             else:
@@ -154,30 +154,29 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
         plt.legend(fontsize=8, loc='upper center')
     fig.add_axes([2.2,0.26,0.25, 0.15])
     frame1=plt.gca()
-    my_spec.plot_ss(new_fig=False, cb=False,vmin=1e7,vmax=5e8)
-    if pc_overlap is True:
-        chunks=np.zeros((len(models_e_a),1,models_e_a[0].shape[0],models_e_a[0].shape[1]),dtype=complex)
-        for h in range(0,len(models_e_a)):
-            chunks[h,0,:,:]=models_e_a[h]
-        full_mE=THTH.mosaic(chunks)
-        me_f= np.linspace(spec_pieces[0,0],spec_pieces[-1,-1], full_mE.shape[0]) * u.MHz
-        me_t= my_spec.t
-        fig.add_axes([0.6,0.0,0.25,1.0])
-        frame1=plt.gca()
-        plt.imshow(np.angle(full_mE), aspect='auto', origin='lower', cmap='seismic', interpolation='none') 
-        npad=3
-        full_mE_pad=np.pad(full_mE.T,((0,npad*full_mE.T.shape[0]),(0,npad*full_mE.T.shape[1])),mode='constant',
-                        constant_values=full_mE.T.mean())
-        full_mE_pad=full_mE_pad.T
-        me_fd=THTH.fft_axis(me_t,u.mHz,npad)
-        me_tau=THTH.fft_axis(me_f,u.us,npad)
-
-        full_mEs=np.fft.fftshift(np.fft.fft2(full_mE_pad))
-        fig.add_axes([2.2,0.026,0.25, 0.15])
-        frame1=plt.gca()
-        mth.fun_plot_mes(np.abs(full_mEs)**2, me_fd, me_tau, new_fig=False, cb=False, vmin=1e7, vmax=5e8)
-        if load_model is True:
-            sim_fit={'mE':full_mE, 't':me_t, 'f':me_f, 'mEs':full_mEs, 'fd':me_fd, 'tau':me_tau}
+    my_spec.plot_ss(new_fig=False, cb=False,vmin=vmin_ss,vmax=vmax_ss)
+    #if pc_overlap is True:
+    #    chunks=np.zeros((len(models_e_a),1,models_e_a[0].shape[0],models_e_a[0].shape[1]),dtype=complex)
+    #    for h in range(0,len(models_e_a)):
+    #        chunks[h,0,:,:]=models_e_a[h]
+    #    full_mE=THTH.mosaic(chunks)
+    #    me_f= np.linspace(spec_pieces[0,0],spec_pieces[-1,-1], full_mE.shape[0]) * u.MHz
+    #    me_t= my_spec.t
+    #    fig.add_axes([0.6,0.0,0.25,1.0])
+    #    frame1=plt.gca()
+    #    plt.imshow(np.angle(full_mE), aspect='auto', origin='lower', cmap='seismic', interpolation='none') 
+    #    npad=3
+    #    full_mE_pad=np.pad(full_mE.T,((0,npad*full_mE.T.shape[0]),(0,npad*full_mE.T.shape[1])),mode='constant',
+    #                    constant_values=full_mE.T.mean())
+    #    full_mE_pad=full_mE_pad.T
+    #    me_fd=THTH.fft_axis(me_t,u.mHz,npad)
+    #    me_tau=THTH.fft_axis(me_f,u.us,npad)
+    #    full_mEs=np.fft.fftshift(np.fft.fft2(full_mE_pad))
+    #    fig.add_axes([2.2,0.026,0.25, 0.15])
+    #    frame1=plt.gca()
+    #    mth.fun_plot_mes(np.abs(full_mEs)**2, me_fd, me_tau, new_fig=False, cb=False, vmin=1e7, vmax=5e8)
+    #    if load_model is True:
+    #        sim_fit={'mE':full_mE, 't':me_t, 'f':me_f, 'mEs':full_mEs, 'fd':me_fd, 'tau':me_tau}
 
     plt.savefig('triple_%.2f_%s_%s_%s.png'%(my_spec.stend[0],my_spec.tel,aux_name,saveauxname),
                 format='png',bbox_inches='tight',dpi=90)
@@ -206,7 +205,7 @@ def load_wsrt_spec(my_spec, eta_ref=None, ref_freq=None,figsize=(5,7.5), spec_pi
         spec_pieces=new_sp_pieces
     models_e_a=[]
     models_ds_a=[]
-
+    vmin_ss,vmax_ss=np.percentile(np.abs(my_spec.ss.Is)**2, [10,100-5e-2])
     fig=plt.figure(figsize=figsize, dpi= 70, facecolor='w', edgecolor='k')
     plt.figtext(0.9,0.95,'MJD: %.2f'%my_spec.mjd.mjd.mean(), fontsize=15)
     dveff_here=fth.eta_to_dveff_cf(eta_ref, ref_freq)
@@ -255,12 +254,12 @@ def load_wsrt_spec(my_spec, eta_ref=None, ref_freq=None,figsize=(5,7.5), spec_pi
     fig.add_axes([1.0,0.5,0.35,0.35])
     frame1=plt.gca()
     plt.title(r'Secondary spectrum of data')
-    my_spec.plot_ss(new_fig=False, cb=False,vmin=7e6,vmax=2e8)
+    my_spec.plot_ss(new_fig=False, cb=False,vmin=vmin_ss, vmax=vmax_ss)#,vmin=7e6,vmax=2e8)
     plt.plot(my_spec.ss.fd,eta_load*(my_spec.ss.fd**2),'r',lw=2)
     
     fig.add_axes([1.4,0.5,0.35,0.35])
     frame1=plt.gca()
-    my_spec.plot_ss(new_fig=False, cb=False,vmin=7e6,vmax=2e8)
+    my_spec.plot_ss(new_fig=False, cb=False,vmin=vmin_ss, vmax=vmax_ss)
     
     
     if pc_overlap is True:

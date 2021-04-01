@@ -125,7 +125,7 @@ class ModelSpec(object):
         fun_plot_mes(self.mEs, self.fd, self.tau, fd_lim=fd_lim, tau_lim=tau_lim, vmin=vmin, vmax=vmax, vv_default=vv_default, cb=cb,new_fig=new_fig,figsize=figsize, dpi=dpi)
 
 
-def fun_plot_mes(mEs,fd,tau,fd_lim=[-1.5,1.5],tau_lim=[0.0,1.4],vmin=None,vmax=None,vv_default=True, cb=True,new_fig=True, figsize=(3,3),dpi=150):
+def fun_plot_mes(mEs,fd,tau,fd_lim=[-1.5,1.5],tau_lim=[0.0,1.4],vmin=None,vmax=None,vv_default=True, cb=True,new_fig=True, figsize=(3,3),dpi=150, cmap='viridis'):
     if new_fig is True:
         plt.figure(figsize=figsize, dpi=dpi)
     SS_ext=ext_find(fd,tau)
@@ -138,7 +138,7 @@ def fun_plot_mes(mEs,fd,tau,fd_lim=[-1.5,1.5],tau_lim=[0.0,1.4],vmin=None,vmax=N
     if fd_lim is None:
         fd_lim=np.array([fd[0].value,fd[-1].value])
 
-    plt.imshow(mEs,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower')
+    plt.imshow(mEs,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower', cmap=cmap)
     plt.xlabel(fd.unit.to_string('latex'))
     plt.ylabel(tau.unit.to_string('latex'))
     if cb is True:
