@@ -139,19 +139,22 @@ def fun_plot_ss(Is, tau, fd, fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, v
     dpi - resolution of a newly created figure
     cb - whether or not to show the colorbar
     '''
-
+    Is2=np.abs(Is**2)
     SS_ext=ext_find(fd,tau)
+    if (vmin is None) or (vmax is None):
+        vmin_pc,vmax_pc=np.percentile(Is2,[10,100-5e-2])
+        #vmin=np.median(np.abs(Is[(Is!=0)])**2)*2
     if vmin is None:
-        vmin=np.median(np.abs(Is[(Is!=0)])**2)*2
+        vmin=vmin_pc
     if vmax is None:
-        vmax=np.max(np.abs(Is[(Is!=0)])**2)*np.exp(-2.7)/10
+        vmax=vmax_pc
     if tau_lim is None:
         tau_lim=np.array([tau[0].value,tau[-1].value])
     if fd_lim is None:
         fd_lim=np.array([fd[0].value,fd[-1].value])
     if new_fig is True:
         fig=plt.figure(figsize=figsize, dpi=dpi, facecolor='w', edgecolor='k')
-    plt.imshow(np.abs(Is)**2,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower', cmap=cmap)
+    plt.imshow(Is2,norm=LogNorm(vmax=vmax, vmin=vmin),aspect='auto',extent=SS_ext, origin='lower', cmap=cmap)
     if cb is True:
         plt.colorbar()
 

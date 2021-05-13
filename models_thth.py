@@ -39,32 +39,44 @@ def recover_phases(dspec,time,freq,SS,fd,tau,edges,eta_fit):
     ##Map back to time/frequency space
     recov_E=THTH.rev_map(ththE_red,tau,fd,eta,edges_red,isdspec = False)
     model_E=np.fft.ifft2(np.fft.ifftshift(recov_E))[:dspec.shape[0],:dspec.shape[1]]
+    model_E_ev=model_E[:dspec.shape[0],:dspec.shape[1]]
+    model_E_ev=np.pad(model_E_ev,
+                    (   (0,SS.shape[0]-model_E_ev.shape[0]),
+                        (0,SS.shape[1]-model_E_ev.shape[1])),
+                    mode='constant',
+                    constant_values=model_E_ev.mean())
+    model_field_ev=np.abs(np.fft.fftshift(np.fft.fft2(model_E_ev)))**2
+    model_E_ev=model_E_ev[:dspec.shape[0],:dspec.shape[1]].T
+
     model_E*=(dspec.shape[0]*dspec.shape[1]/4)
     model_E[dspec>0]=np.sqrt(dspec[dspec>0])*np.exp(1j*np.angle(model_E[dspec>0]))
     model_E=np.pad(model_E,
                     (   (0,SS.shape[0]-model_E.shape[0]),
                         (0,SS.shape[1]-model_E.shape[1])),
                     mode='constant',
-                    constant_values=0)
+                    constant_values=model_E.mean())
     recov_E=np.abs(np.fft.fftshift(np.fft.fft2(model_E)))**2
     model_E=model_E[:dspec.shape[0],:dspec.shape[1]]
     N_E=recov_E[:recov_E.shape[0]//4,:].mean()
     model_ds=model[:dspec.shape[0],:dspec.shape[1]]
     model_ss=recov
     model_field=recov_E
-    return model_E, model_ds, model_ss, model_field
+    return model_E, model_ds, model_ss, model_field, model_E_ev, model_field_ev
 
 def get_models(sp_part, eta_fit=1.6*u.us/(u.mHz**2), edge=1.0,ntau=512):
     #need to update the chi2
     edges=np.linspace(-edge,edge,ntau)
     n_ds,n_t,n_f,p_sec,p_fd,p_tau=sp_part.I, sp_part.t, sp_part.f, sp_part.ss.Is, sp_part.ss.fd, sp_part.ss.tau
-    model_E, model_ds,model_ss, model_field=recover_phases(n_ds.T,n_t,n_f,p_sec,p_fd,p_tau, edges,eta_fit)
+    model_E, model_ds,model_ss, model_field, model_E_ev, model_field_ev=recover_phases(n_ds.T,n_t,n_f,p_sec,p_fd,p_tau, edges,eta_fit)
     N=np.mean(sp_part.nI)
     chi2=((sp_part.I-model_ds.T)**2).mean()/N**2
-    return model_E.T, model_ds.T, model_ss, model_field, chi2
+    return model_E.T, model_ds.T, model_ss, model_field, model_E_ev, model_field_ev, chi2
 
-def get_models_spec(sp_part, eta_fit=1.6*u.us/(u.mHz**2), edge=1.0,ntau=512):
-    model_E, model_ds, model_ss, model_field, chi2 = get_models(sp_part, eta_fit=eta_fit, edge=edge,ntau=ntau)
+def get_models_spec(sp_part, eta_fit=1.6*u.us/(u.mHz**2), edge=1.0,ntau=512, model_ev=False):
+    model_E, model_ds, model_ss, model_field, model_E_ev, model_field_ev, chi2 = get_models(sp_part, eta_fit=eta_fit, edge=edge,ntau=ntau)
+    if model_ev is True:
+        model_E=model_E_ev
+        model_field=model_field_ev
     model_spec=ModelSpec(eta=eta_fit, mI=model_ds, mIs=model_ss, mE=model_E, mEs=model_field,
                                      spec=sp_part)
     return model_spec
@@ -116,7 +128,7 @@ class ModelSpec(object):
     def plot_me(self,cmap='seismic', new_fig=True, figsize=(3,3), dpi=150):
         if new_fig is True:
             plt.figure(figsize=figsize, dpi=dpi)
-        plt.imshow(np.angle(self.mE).T,aspect='auto', origin='lower', cmap=cmap,
+        plt.imshow(np.angle(self.mE).T,aspect='auto', origin='lower',interpolation='none',cmap=cmap,
                   extent=(0,(self.spec.stend[1]-self.spec.stend[0])*24,
                                      np.amin(self.f).value,np.amax(self.f).value))
         plt.xlabel('Time (hr)')
