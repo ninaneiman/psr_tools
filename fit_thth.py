@@ -77,7 +77,7 @@ def parabola_fit(par_array, chisq):
 
 def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512,
                        d_eff=0.325*u.kpc, npoints=100, chi2_method='Nina', reduced=True,
-                        edge_threshold=False, tau_ed=0.25, chi2svd=False, eta2=None, edge2=None):
+                        edge_threshold=False, tau_ed=0.25, chi2svd=False, cen0=0.1, eta2=None, edge2=None):
     print ('fit:', spec)
     edges=np.linspace(-edge,edge,ntau)    
    
@@ -116,7 +116,7 @@ def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512
         if chi2_method == 'Daniel':
             chisq[i]=THTH.chisq_calc(spec.I.T,spec.ss.Is, spec.ss.tau, spec.ss.fd, eta, edges,mask,N)
         if chi2_method == 'Nina':
-            chisq[i] = nina_get_chi2_spec(spec, eta, edge, ntau, reduced=reduced, chi2svd=chi2svd, eta2=eta2, edge2=edge2)
+            chisq[i] = nina_get_chi2_spec(spec, eta, edge, ntau, reduced=reduced, chi2svd=chi2svd, cen0=cen0, eta2=eta2, edge2=edge2)
 
     ##Fit for a parabola around the minimum
     par_fit, par_sig, popt, fit_range_array = parabola_fit(pars2,chisq)
@@ -157,9 +157,9 @@ def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512
     return fitdic, np.mean(spec.f), np.mean(spec.mjd.mjd), res_dic
 
 
-def nina_get_chi2_spec(spec, eta, edge=1.4, ntau=512, fd2=None,tau2=None, plot_mds=False, reduced=True, chi2svd=False, eta2=None, edge2=None):
+def nina_get_chi2_spec(spec, eta, edge=1.4, ntau=512, fd2=None,tau2=None, plot_mds=False, reduced=True, chi2svd=False, cen0=0.1, eta2=None, edge2=None):
     if chi2svd is True:
-        chisq=nina_get_svd(spec.I, spec.ss.Is, spec.ss.tau, spec.ss.fd, eta, edge, ntau, eta2=eta2, edge2=edge2)
+        chisq=-nina_get_svd(spec.I, spec.ss.Is, spec.ss.tau, spec.ss.fd, eta, edge, ntau, cen0=cen0, eta2=eta2, edge2=edge2)
     else:
         chisq=nina_get_chi2(spec.I, spec.ss.Is, spec.ss.tau, spec.ss.fd, eta, edge, ntau, fd2, tau2, plot_mds, spec.nI, reduced=reduced)
     return chisq
@@ -188,16 +188,31 @@ reduced=True):
     ntheta_red=tau_red.shape[0]*2/(SS.shape[0]/ds.shape[1])
     return chisq
 
-def nina_get_svd(ds, SS,tau,fd, eta, edge=1.4, ntau=512, eta2=None, edge2=None):
+def nina_get_svd(ds, SS,tau,fd, eta, edge=1.4, ntau=512, cen0=0.1, eta2=None, edge2=None):
     if eta2 == None:
         eta2=eta
     edges=np.linspace(-edge,edge,ntau)
     if edge2 == None:
         edges2=edges
+    else:
+        edges2=np.linspace(-edge2,edge2,ntau)
     thth_red, edges_red1, edges_red2 = THTH.two_curve_map(SS, tau, fd, eta,
                                                 edges, eta2, edges2)
     cents1=(edges_red1[1:]+edges_red1[:-1])/2
-    thth_red[:,np.abs(cents1)<=3]=0
+    thth_red[:,np.abs(cents1)<=cen0]=0
     U,S,W=np.linalg.svd(thth_red)
     chisq_svd=S[0]
     return chisq_svd
+
+
+def nina_two_screen_chi2(ds, SS,tau,fd, eta, edge=1.4, ntau=512, eta2=None, edge2=None):
+    if eta2 == None:
+        eta2=eta
+    edges=np.linspace(-edge,edge,ntau)
+    if edge2 == None:
+        edges2=edges
+    
+    thth=THTH.thth_map2(SS.T, tau, fd, eta1, edges1,eta2,edges2)
+    recov=THTH.rev_map2(thth, tau, fd, eta1, edges1, eta2, edges2,isdspec=True)
+    model_modeler=np.fft.ifft2(np.fft.ifftshift(recov)).real
+    chi2_val=np.sum(((model_modeler-ds.T)**2)/ds.size)
