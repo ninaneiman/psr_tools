@@ -97,7 +97,7 @@ def fun_plot_ds(ds, t, f, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=
     if (vmin is None) and (vmax is None):
         vmin,vmax = np.percentile(ds,[1,99])
     plt.imshow(ds.T,extent=(0,(t[-1].to(u.hr).value-t[0].to(u.hr).value),np.amin(f).value,np.amax(f).value),
-           vmin=vmin, vmax=vmax, aspect='auto', origin='lower', cmap=cmap)
+           vmin=vmin, vmax=vmax, aspect='auto', origin='lower', cmap=cmap, interpolation='none')
     plt.xlabel('Time (hr)')
     plt.ylabel('Frequency (%s)'%f.unit.to_string('latex'))
 
@@ -176,6 +176,7 @@ def find_nearest(array, value):
 
 #not sure this function is in use - could delete 
 def find_edges(I_cross, fd_cross, tau_cross, fd_lim, tau_lim):
+    '''finds eges of an aray for a specific values'''
     fd_l=find_nearest(fd_cross, fd_lim[0])
     fd_r=find_nearest(fd_cross, fd_lim[1])
     tau_b=np.amax([find_nearest(tau_cross, tau_lim[0]),find_nearest(tau_cross, tau_lim[1])])-1
