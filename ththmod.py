@@ -1,1 +1,1 @@
-../scintools/scintools/ththmod.py
+../ipy_nbs/ththmod.py
