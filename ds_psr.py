@@ -363,6 +363,7 @@ class Spec(object):
             I_sel, sec_sel, f_sel, t_idx, f_idx, nI_sel=fun_select(self.I,time_axis,self.f, time_sel=time_sel,
                               freq_sel=freq_sel, freq_idx=freq_idx,time_idx=time_idx, ns=self.nI)
             sec_sel=sec_sel-sec_sel[0]
+            print ('it is happening')
             mjd_sel=self.mjd.mjd[t_idx[0]:t_idx[1]]*u.d
             mjd_bin=mjd_sel[1]-mjd_sel[0]
             my_stend=[mjd_sel[0].value,mjd_sel[-1].value+mjd_bin.value]
