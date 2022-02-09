@@ -115,7 +115,7 @@ def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512
                        d_eff=0.325*u.kpc, npoints=100, chi2_method='Nina', reduced=True,
                         edge_threshold=False, tau_ed=0.25, chi2svd=False, cen0=0.1, eta2=None, edge2=None):
     '''Performes th-th fit for a given ds chunk.
-    spec - Spec. onject. contains ds,f,t its ss, tau, fd and other info about the observation
+    spec - Spec. object. contains ds,f,t its ss, tau, fd and other info about the observation
     curv_par - which parameter to use for a curve fitting: eta, mueff or dveff = veff/sqrt(deff). Note that eta is non-linear while, two others are
     par_lims - range of par values for which perform thth and calculate chisq
     edge - limit of fd in ss until which to make thth decomposition and model
@@ -216,7 +216,7 @@ def nina_get_chi2_spec(spec, eta, edge=1.4, ntau=512, fd2=None,tau2=None, plot_m
     '''Calculate chisq for each thth decomposion of a given Spec object (i.e. ds chunck).
     See nina_get_chi2 for more details
     ---
-    spec - Spec. onject. contains ds,f,t its ss, tau, fd and other info about the observation
+    spec - Spec. object. contains ds,f,t its ss, tau, fd and other info about the observation
     eta - curvature of the parabola in ss
     edge - limit of fd in ss until which to make thth decomposition and model
     ntau - number of points to which split the thth decomposition and model
