@@ -116,7 +116,7 @@ def daniel_pars_fit(spec, curv_par='eta', par_lims=[0.25,5.5], edge=1.4,ntau=512
                         edge_threshold=False, tau_ed=0.25, chi2svd=False, cen0=0.1, eta2=None, edge2=None):
     '''Performes th-th fit for a given ds chunk.
     spec - Spec. object. contains ds,f,t its ss, tau, fd and other info about the observation
-    curv_par - which parameter to use for a curve fitting: eta, mueff or dveff = veff/sqrt(deff). Note that eta is non-linear while, two others are
+    curv_par - which parameter to use for the chisq curve fitting: eta, mueff or dveff = veff/sqrt(deff). Note that eta is non-linear while two others are
     par_lims - range of par values for which perform thth and calculate chisq
     edge - limit of fd in ss until which to make thth decomposition and model
     ntau - number of points to which split the thth decomposition and model
