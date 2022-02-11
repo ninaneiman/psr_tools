@@ -39,7 +39,6 @@ def shrink_any_2(array, factor=[1,1]):
         k=i//factor[1]
         nnew_data[:,k]=np.mean(array[:,i:i+factor[1]],axis=1)
     array=nnew_data
-    #print (array.shape)
     return array
 
 

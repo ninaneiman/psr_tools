@@ -5,7 +5,7 @@ from template_match import rotate_phase, align_profile, convert_template
 import matplotlib.pyplot as plt
 from glob import glob
 from os.path import join
-
+#generating dynamic spectra from psr archive files. This one also includes extra pulsar phase arrays. 
 
 templ='/export/astron/archibald/projects/triplesystem/processing/template-work/56412.76_GBT_1400.rmset.scrunch.sm'
 

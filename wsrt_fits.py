@@ -13,7 +13,6 @@ import astropy
 from matplotlib.colors import LogNorm
 
 import matplotlib as mpl
-#import scintools.ththmod as THTH
 from scipy.sparse.linalg import eigsh
 from scipy.optimize import curve_fit
 
@@ -155,6 +154,8 @@ def fit_wsrt_spec(my_spec, figsize=(5,7.5), spec_pieces='Default', par_lims=[0.5
     fig.add_axes([2.2,0.26,0.25, 0.15])
     frame1=plt.gca()
     my_spec.plot_ss(new_fig=False, cb=False,vmin=vmin_ss,vmax=vmax_ss)
+    #this makes full model via Daniel's mozaicking
+    #---------------------------------------------
     #if pc_overlap is True:
     #    chunks=np.zeros((len(models_e_a),1,models_e_a[0].shape[0],models_e_a[0].shape[1]),dtype=complex)
     #    for h in range(0,len(models_e_a)):
@@ -210,12 +211,10 @@ def load_wsrt_spec(my_spec, eta_ref=None, ref_freq=None,figsize=(5,7.5), spec_pi
     plt.figtext(1.25,0.95,r'$\eta$: %.2f $s^3$, $\nu_c$: %.1f MHz'%(eta_ref.value, ref_freq.value), fontsize=15)
     plt.figtext(1.9,0.95,'dveff:%.2f'%dveff_here.value, fontsize=15)
     fig.add_axes([0.0,0.0,0.25,1.0])
-    #shr_spec=my_spec.shrink(factor=[16,1])
     plt.gca()
     my_spec.plot_ds(new_fig=False)
     for i in range(0,spec_pieces.shape[0]):
         spec_sel=my_spec.select(freq_idx=[spec_pieces[i,0],spec_pieces[i,1]])
-        #print ('hereeee:', spec_pieces.shape[0], np.shape(spec_sel.f), np.shape(spec_sel.t))
 
         if ind_mean0 is True:
             spec_sel.I=spec_sel.I-np.mean(spec_sel.I)
@@ -293,7 +292,7 @@ def load_wsrt_spec(my_spec, eta_ref=None, ref_freq=None,figsize=(5,7.5), spec_pi
         fig.add_axes([1.8,0.5,0.35, 0.35])
         frame1=plt.gca()
         plt.title(r'recovered wavefield')
-        mth.fun_plot_mes(np.abs(full_mEs)**2, me_fd, me_tau, new_fig=False, cb=True)#, vmin=7e6, vmax=5e9)
+        mth.fun_plot_mes(np.abs(full_mEs)**2, me_fd, me_tau, new_fig=False, cb=True)
         full_models={'mE':full_mE, 't':me_t, 'f':me_f, 'mEs':full_mEs, 'fd':me_fd, 'tau':me_tau,
                     'mds':full_ds, 'mjd':my_spec.mjd.mjd.mean()}
 

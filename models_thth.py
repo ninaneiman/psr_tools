@@ -13,14 +13,12 @@ import astropy
 from matplotlib.colors import LogNorm
 
 import matplotlib as mpl
-#import scintools.ththmod as THTH
 from scipy.sparse.linalg import eigsh
 from scipy.optimize import curve_fit
 
 sys.path.insert(1, '/home/gusinskaia/scintools/scintools')
 import ththmod as THTH
 np.seterr(divide='ignore', invalid='ignore')
-
 
 
 ##Function for making extent tuple for plotting
