@@ -415,4 +415,55 @@ class Spec(object):
         N=np.sqrt(temp[:temp.shape[0]//6,:temp.shape[1]//6].mean())
         return N 
 
+    def __add__(self, other, pad_it=True, npad=3):
+        if len(self.f) != len(other.f):
+            raise ValueError("ds objects have different frequency axis. Currently not supported") 
 
+        if np.mean(self.mjd.mjd) < np.mean(other.mjd.mjd):
+            st=self
+            fin=other
+        else:
+            st=other
+            fin=self
+
+        if st.mjd[-1] > fin.mjd[0]:
+            raise ValueError("ds objects overlap in time. Currently not supported")
+
+        if (fin.mjd[0] - st.mjd[-1]) >0.5:
+            raise ValueError("gap between data is too big")
+
+
+        dt_st=(st.t[1]-fin.t[0]).to(u.d).value
+        dt_fin=(fin.t[1]-fin.t[0]).to(u.d).value
+
+        len_gap_fin=(fin.mjd.mjd[0]-st.mjd.mjd[-1])/dt_fin
+        len_gap_st=(fin.mjd.mjd[0]-st.mjd.mjd[-1])/dt_st
+        len_st=len(st.t)
+
+        desired_len=int((fin.mjd.mjd[0]-st.mjd.mjd[0])/dt_fin)
+
+        mjd_end=fin.mjd.mjd[0]-dt_fin
+        mjd_st=fin.mjd.mjd[0]-dt_fin*desired_len
+
+        gap_I=np.ones((int(len_gap_st), len(st.f)))*np.mean(st.I)
+        gap_mjd=np.arange(st.mjd.mjd[-1]+dt_st, st.mjd.mjd[-1]+dt_st*(int(len_gap_st)), dt_st)
+
+        st_gap_ds=np.concatenate((st.I, gap_I), axis=0)
+        st_gap_mjd=np.concatenate((st.mjd.mjd, gap_mjd), axis=0)
+
+        t_ed=[mjd_st*u.d, mjd_end*u.d+dt_fin*u.d]
+        t_len=desired_len
+
+        f_ed=[st.f[0], st.f[-1]]
+        f_len=len(st.f)
+
+        I_new, f_new, t_sec_new, t_int, nI_new=fun_interp(st_gap_ds, st_gap_mjd, st.f,
+                                                          t_ed, f_ed, t_len, f_len, ns=None)
+
+
+        all_ds=np.concatenate((I_new, fin.I), axis=0)
+        time_new=np.concatenate((t_sec_new.value,(fin.t+t_sec_new[-1]+(fin.t[1]-fin.t[0])).value), axis=0)
+
+        new_spec=Spec(I=all_ds, t=time_new*u.s, f=fin.f, stend=[t_int[0],fin.mjd.mjd[-1]],
+                                tel=fin.tel, psr=fin.psr, pad_it=pad_it, npad=npad)
+        return new_spec

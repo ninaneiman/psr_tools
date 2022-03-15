@@ -61,7 +61,7 @@ def plot_fit_results(sp, msp, dic, new_fig=True, ax_y=0.0, myfig=None):
     if new_fig is True:
         plt.show()
 
-def load_new_gbt(mjd, gbt_dir='/mnt/scratch-lustre/gusinskaia/triple_system/2021_GBT_dss/', plot_it=False):
+def load_new_gbt(mjd, gbt_dir='/mnt/scratch-lustre/gusinskaia/triple_system/2021_GBT_dss/', plot_it=False, shrink=[10,1]):
     spec=dsa.load_triple_spectrum(gbt_dir+'%d_GBT_1400_wns_check.npz'%mjd, factor=[1,1], wnoise=True, mean0=True)
     spec.I=np.flip(spec.I, axis=1)
     spec.nI=np.flip(spec.nI, axis=1)
@@ -72,7 +72,7 @@ def load_new_gbt(mjd, gbt_dir='/mnt/scratch-lustre/gusinskaia/triple_system/2021
     spec.I[:,390:420]=0.0
     spec.I[:,510:540]=0.0
 
-    spec_shr=spec.shrink([10,1])
+    spec_shr=spec.shrink(shrink)
     spec_sel=spec_shr.select(freq_sel=[1150*u.MHz, 1850*u.MHz])
     
     if plot_it is True:
@@ -89,7 +89,7 @@ def load_new_gbt(mjd, gbt_dir='/mnt/scratch-lustre/gusinskaia/triple_system/2021
 
     
 
-def fit_new_gbt(spec, ntime=1, ntau=512, nfreq=11, npoints=50, freq_start=1200*u.MHz, freq_step=56*u.MHz,
+def fit_new_gbt(spec, ntime=1, nfreq=11, par_lims=[0.25,2.5], ntau=512, npoints=50, freq_start=1200*u.MHz, freq_step=56*u.MHz,
                thth_method='coherent', chi2_method='Nina', reduced=False, save_fig=True):
     if thth_method=='incoherent':
         chi2_method='Eigen'
@@ -123,7 +123,7 @@ def fit_new_gbt(spec, ntime=1, ntau=512, nfreq=11, npoints=50, freq_start=1200*u
             spec_sel.I=spec_sel.I-np.mean(spec_sel.I)
             freqs[i]=np.mean(spec_sel.f.value)
             
-            fitdic, my_f, my_mjd, res_dic=fth.daniel_pars_fit(spec_sel, curv_par='dveff', par_lims=[0.25,2.5],
+            fitdic, my_f, my_mjd, res_dic=fth.daniel_pars_fit(spec_sel, curv_par='dveff', par_lims=par_lims,
                             edge=1.3,ntau=ntau,d_eff=0.499*u.kpc, npoints=npoints, chi2_method=chi2_method,
                             reduced=reduced, thth_method=thth_method)
             
