@@ -446,7 +446,10 @@ class Spec(object):
         mjd_st=fin.mjd.mjd[0]-dt_fin*desired_len
 
         gap_I=np.ones((int(len_gap_st), len(st.f)))*np.mean(st.I)
-        gap_mjd=np.arange(st.mjd.mjd[-1]+dt_st, st.mjd.mjd[-1]+dt_st*(int(len_gap_st)), dt_st)
+        #gap_mjd=np.arange(st.mjd.mjd[-1]+dt_st, st.mjd.mjd[-1]+dt_st*(int(len_gap_st)), dt_st)
+        gap_mjd=np.linspace(st.mjd.mjd[-1]+dt_st, st.mjd.mjd[-1]+dt_st*(int(len_gap_st)), int(len_gap_st))
+        #print (dt_st*24*3600, (gap_mjd[1]-gap_mjd[0])*24*3600, dt_fin*24*3600)
+        #print ((dt_st-(gap_mjd[1]-gap_mjd[0]))*24*3600, (dt_st-dt_fin)*24*3600)
 
         st_gap_ds=np.concatenate((st.I, gap_I), axis=0)
         st_gap_mjd=np.concatenate((st.mjd.mjd, gap_mjd), axis=0)
@@ -456,7 +459,7 @@ class Spec(object):
 
         f_ed=[st.f[0], st.f[-1]]
         f_len=len(st.f)
-
+        print (np.shape(st_gap_ds),np.shape(st_gap_mjd))
         I_new, f_new, t_sec_new, t_int, nI_new=fun_interp(st_gap_ds, st_gap_mjd, st.f,
                                                           t_ed, f_ed, t_len, f_len, ns=None)
 

@@ -257,7 +257,7 @@ reduced=True):
     edges=np.linspace(-edge,edge,ntau) 
     thth_red,thth2_red,recov,model,edges_red,w,V=THTH.modeler(SS,tau,fd, eta, edges, fd2, tau2)
     emin, emax=np.amin(edges_red), np.amax(edges_red)
-    c=([(tau.value > emin)&(tau.value < emax) ])
+    c=((tau.value > emin)&(tau.value < emax) )
     tau_red=tau[c]
     #ndof is number of degrees of freedom - i.e. number of points minus number of fitting parameters:
     ndof=ds.size-tau_red.shape[0]*2-2#/(SS.shape[0]/ds.shape[1]) - 2

@@ -26,7 +26,7 @@ import models_thth as mth
 import wsrt_fits as wf
 import ththmod as THTH
 
-def plot_fit_results(sp, msp, dic, new_fig=True, ax_y=0.0, myfig=None):
+def plot_fit_results(sp, msp, dic, new_fig=True, ax_y=0.0, myfig=None, plot_thth=False, thth_red=None, fd_lims=[-1.5,1.5], tau_lims=[0,1.25]):
     if new_fig is True:
         fig=plt.figure(figsize=(6,1), dpi=150)
         myfig=fig
@@ -44,25 +44,33 @@ def plot_fit_results(sp, msp, dic, new_fig=True, ax_y=0.0, myfig=None):
     frame1.axes.get_yaxis().set_ticks([])
     myfig.add_axes([0.6,ax_y,0.15,0.15])
     frame1=plt.gca()
-    sp.plot_ss(new_fig=False, tau_lim=[0.0,1.25], vmin=1e3,vmax=5e6, cb=False)
+    sp.plot_ss(new_fig=False, fd_lim=fd_lims, tau_lim=tau_lims, cb=False)
     frame1.axes.get_yaxis().set_ticks([])
     myfig.add_axes([0.8,ax_y,0.15,0.15])
     frame1=plt.gca()
-    msp.plot_mss(new_fig=False, cb=False)
+    msp.plot_mss(new_fig=False, fd_lim=fd_lims, tau_lim=tau_lims, cb=False)
     frame1.axes.get_yaxis().set_ticks([])
     myfig.add_axes([1.0,ax_y,0.15,0.15])
     frame1=plt.gca()
-    msp.plot_mes(new_fig=False, cb=False)
+    msp.plot_mes(new_fig=False, fd_lim=fd_lims, tau_lim=tau_lims, cb=False)
     frame1.axes.get_yaxis().set_ticks([])
     myfig.add_axes([1.2,ax_y,0.15,0.15])
     frame1=plt.gca()
     mth.plot_etas(dic,new_fig=False)
     frame1.axes.get_yaxis().set_ticks([])
+    if plot_thth is True:
+        myfig.add_axes([1.4,ax_y,0.15,0.15])
+        frame1=plt.gca()
+        vmin,vmax=np.percentile(np.abs(thth_red)**2, [10,99.5])
+        plt.title(r'$\theta$-$\theta$ of ss')
+        plt.imshow(np.abs(thth_red)**2,norm=LogNorm(vmin=vmin, vmax=vmax))
+        frame1.axes.get_yaxis().set_ticks([])
+        frame1.axes.get_xaxis().set_ticks([])
     if new_fig is True:
         plt.show()
 
-def load_new_gbt(mjd, gbt_dir='/mnt/scratch-lustre/gusinskaia/triple_system/2021_GBT_dss/', plot_it=False, shrink=[10,1]):
-    spec=dsa.load_triple_spectrum(gbt_dir+'%d_GBT_1400_wns_check.npz'%mjd, factor=[1,1], wnoise=True, mean0=True)
+def load_new_gbt(mjd, gbt_dir='/mnt/scratch-lustre/gusinskaia/triple_system/2021_GBT_dss/', plot_it=False, shrink=[10,1], extention='_GBT_1400_wns_check.npz'):
+    spec=dsa.load_triple_spectrum(gbt_dir+'%d%s'%(mjd,extention), factor=[1,1], wnoise=True, mean0=True)
     spec.I=np.flip(spec.I, axis=1)
     spec.nI=np.flip(spec.nI, axis=1)
     spec.f=np.flip(spec.f, axis=0)
@@ -89,8 +97,9 @@ def load_new_gbt(mjd, gbt_dir='/mnt/scratch-lustre/gusinskaia/triple_system/2021
 
     
 
-def fit_new_gbt(spec, ntime=1, nfreq=11, par_lims=[0.25,2.5], ntau=512, npoints=50, freq_start=1200*u.MHz, freq_step=56*u.MHz,
-               thth_method='coherent', chi2_method='Nina', reduced=False, save_fig=True):
+def fit_new_gbt(spec, ntime=1, nfreq=11, par_lims=[0.25,2.5], edge=1.3, ntau=512, npoints=50, freq_start=1200*u.MHz, freq_step=56*u.MHz,
+               thth_method='coherent', chi2_method='Nina', reduced=False, save_fig=True, plot_thth=False, fd_lims=[-1.5,1.5], tau_lims=[0,1.25],
+               mean0=True, figaux=''):
     if thth_method=='incoherent':
         chi2_method='Eigen'
     mjd_dur=(spec.stend[1]-spec.stend[0])/ntime
@@ -120,11 +129,12 @@ def fit_new_gbt(spec, ntime=1, nfreq=11, par_lims=[0.25,2.5], ntau=512, npoints=
             print (k, '=========', i, '==========')
 
             spec_sel=spec_t.select(freq_sel=[freq_start+freq_step*i, freq_start+freq_step*(i+1)])
-            spec_sel.I=spec_sel.I-np.mean(spec_sel.I)
+            if mean0 is True:
+                spec_sel.I=spec_sel.I-np.mean(spec_sel.I)
             freqs[i]=np.mean(spec_sel.f.value)
             
             fitdic, my_f, my_mjd, res_dic=fth.daniel_pars_fit(spec_sel, curv_par='dveff', par_lims=par_lims,
-                            edge=1.3,ntau=ntau,d_eff=0.499*u.kpc, npoints=npoints, chi2_method=chi2_method,
+                            edge=edge,ntau=ntau,d_eff=0.499*u.kpc, npoints=npoints, chi2_method=chi2_method,
                             reduced=reduced, thth_method=thth_method)
             
             if np.isnan(fitdic['eta'] ):
@@ -132,9 +142,13 @@ def fit_new_gbt(spec, ntime=1, nfreq=11, par_lims=[0.25,2.5], ntau=512, npoints=
                 #etas[k,i],dveffs[k,i], e_etas[k,i], e_dveffs[k,i] = np.nan, np.nan, np.nan, np.nan
                 minchi2_dveff=res_dic['par_array'][res_dic['chi2']==res_dic['chi2'].min()][0]
                 minchi2_eta=fth.dveff_to_eta(minchi2_dveff, spec_sel)
-                
-                model_spec=mth.get_models_spec(spec_sel,minchi2_eta,edge=1.25,ntau=512)
-                plot_fit_results(spec_sel, model_spec, res_dic, new_fig=False, ax_y=0.2*i, myfig=fig)
+                model_spec=mth.get_models_spec(spec_sel,minchi2_eta,edge=edge,ntau=ntau)
+                if plot_thth is True:
+                    thth_red, edges_red=THTH.thth_redmap(spec_sel.ss.Is,spec_sel.ss.tau,spec_sel.ss.fd,eta=minchi2_eta,edges=np.linspace(-edge,edge,ntau))
+                else:
+                    thth_red=None
+
+                plot_fit_results(spec_sel, model_spec, res_dic, new_fig=False, ax_y=0.2*i, myfig=fig, plot_thth=plot_thth, thth_red=thth_red, fd_lims=fd_lims, tau_lims=tau_lims)
                 plt.gca()
                 plt.title('did not converge')
 
@@ -143,9 +157,13 @@ def fit_new_gbt(spec, ntime=1, nfreq=11, par_lims=[0.25,2.5], ntau=512, npoints=
                                                         fitdic['eta'].value,fitdic['eta_err'].value,
                                                         fitdic['dveff'].value,fitdic['dveff_err'].value))
 
-                model_spec=mth.get_models_spec(spec_sel,fitdic['eta'],edge=1.25,ntau=512)
-                plot_fit_results(spec_sel, model_spec, res_dic, new_fig=False, ax_y=0.2*i, myfig=fig)
-                
+                model_spec=mth.get_models_spec(spec_sel,fitdic['eta'],edge=edge,ntau=ntau)
+                if plot_thth is True:
+                    thth_red, edges_red=THTH.thth_redmap(spec_sel.ss.Is,spec_sel.ss.tau,spec_sel.ss.fd,eta=fitdic['eta'],
+                                                                      edges=np.linspace(-edge,edge,ntau))
+                else:
+                    thth_red=None
+                plot_fit_results(spec_sel, model_spec, res_dic, new_fig=False, ax_y=0.2*i, myfig=fig, plot_thth=plot_thth, thth_red=thth_red, fd_lims=fd_lims, tau_lims=tau_lims)
 
                 etas[k,i]=fitdic['eta'].value
                 e_etas[k,i]=fitdic['eta_err'].value
@@ -156,7 +174,8 @@ def fit_new_gbt(spec, ntime=1, nfreq=11, par_lims=[0.25,2.5], ntau=512, npoints=
                 
         if save_fig is True:
             plt.draw()
-            figname='triple_GBT_mjd%.2f_%s_%s.png'%(times[k], thth_method, chi2_method) 
+            freq_end=freq_start+nfreq*freq_step
+            figname='fit_overview_mjd%.2f_freq%.1f-%.1f_%s_%s%s.png'%(times[k], freq_start.value, freq_end.value, thth_method, chi2_method, figaux) 
             fig.patch.set_facecolor('w')
             fig.savefig(figname, format='png',bbox_inches='tight',dpi=100)
         plt.show()
