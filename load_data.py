@@ -56,8 +56,8 @@ def load_triple(filenpz='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO
     '''loads ds data from npz file, downsamples it, subtructs mean (if applied) and loads noise data if present (and applied)
     Takes:
     filenpz - name of the npz file to load data from
-    factor - [#int, #int], where #int is always a factor of 2. 
-    factor difined the number by which to downsample 2D ds data (see shrink_2 function)
+    factor - [#int, #int] 
+    factor difines the number by which to downsample 2D ds data (see shrink_2 function) for 2 axis (separately); 0-time, 1-freq.
     mean0 - set mean of the data to 0 (i.e. whether to subtract mean)
     wnoise - whether to load noise data (which is present or not)
     Returns:
