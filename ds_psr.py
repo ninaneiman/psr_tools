@@ -68,7 +68,7 @@ def fun_shrink_ds(ds,t,f,factor=[1,1]):
     return new_ds, new_t, new_f
 
 
-def fun_plot_ds_woaxis(ds, t, f, fig=plt.figure(figsize=(3,8), dpi=150), rect=[0.0,0.0,1.0,1.0]):
+def fun_plot_ds_woaxis(ds, t, f, fig=plt.figure(figsize=(3,8), dpi=150), rect=[0.0,0.0,1.0,1.0], inpt='none'):
     '''function that plots ds inside a given axis. The purpose is to avoid wasting time setting parameters right.
     it takes:
     ds - dynamic spectrum (2D array)
@@ -79,11 +79,11 @@ def fun_plot_ds_woaxis(ds, t, f, fig=plt.figure(figsize=(3,8), dpi=150), rect=[0
     ax=fig.add_axes(rect)
     vmin,vmax = np.percentile(ds,[1,99])
     ax.imshow(ds.T,extent=(0,(t[-1].value-t[0].value)/3600.,np.amin(f).value,np.amax(f).value),
-           vmin=vmin, vmax=vmax, aspect='auto', origin='lower')
+           vmin=vmin, vmax=vmax, aspect='auto', origin='lower', interpolation=intp)
     ax.set_xlabel('Time (hr)')
     ax.set_ylabel('Frequency (%s)'%f.unit.to_string('latex'))
 
-def fun_plot_ds(ds, t, f, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None, cmap='viridis', lab_mfr=False):
+def fun_plot_ds(ds, t, f, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None, cmap='viridis', lab_mfr=False, intp='none'):
     '''function that plots ds. The purpose is to avoid wasting time setting parameters right.
     it takes:
     ds - dynamic spectrum (2D array)
@@ -97,7 +97,7 @@ def fun_plot_ds(ds, t, f, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=
     if (vmin is None) and (vmax is None):
         vmin,vmax = np.percentile(ds,[1,99])
     plt.imshow(ds.T,extent=(0,(t[-1].to(u.hr).value-t[0].to(u.hr).value),np.amin(f).value,np.amax(f).value),
-           vmin=vmin, vmax=vmax, aspect='auto', origin='lower', cmap=cmap, interpolation='none')
+           vmin=vmin, vmax=vmax, aspect='auto', origin='lower', cmap=cmap, interpolation=intp)
     plt.xlabel('Time (hr)')
     if lab_mfr is True:
         plt.ylabel('%.2f (%s)'%(np.mean(f).value, f.unit.to_string('latex')))
@@ -342,9 +342,9 @@ class Spec(object):
         
         mjd_c=(self.stend[1]+self.stend[0])/2.
         return "<Dynamic spectrum: Dur: %.2f hr, Freq: %.2f - %2.f MHz, MJD: %.2f, PSR: %s, Tel: %s, %s>"%(times,np.amin(self.f).value, np.amax(self.f).value, mjd_c, self.psr, self.tel, self.nsinfo)
-    def plot_ds(self, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None, cmap='viridis', lab_mfr=False):
+    def plot_ds(self, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None, cmap='viridis', lab_mfr=False, intp='none'):
         '''Plots ds with pre-defined settings. (see fun_plot_ds)'''
-        fun_plot_ds(self.I, self.t, self.f,new_fig=new_fig,figsize=figsize, dpi= dpi, vmin=vmin, vmax=vmax, cmap=cmap, lab_mfr=lab_mfr)
+        fun_plot_ds(self.I, self.t, self.f,new_fig=new_fig,figsize=figsize, dpi= dpi, vmin=vmin, vmax=vmax, cmap=cmap, lab_mfr=lab_mfr, intp=intp)
     def plot_nds(self, new_fig=True, figsize=(3,8), dpi=150, vmin=None, vmax=None, cmap='viridis'):
         '''Plots noise of the dynamic spectra same way as plot_ds. (see plot_ds)'''
         fun_plot_ds(self.nI, self.t, self.f,new_fig=new_fig,figsize=figsize, dpi= dpi, vmin=vmin, vmax=vmax,cmap=cmap)
