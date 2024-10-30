@@ -85,7 +85,6 @@ def load_triple(filenpz='/mnt/scratch-lustre/gusinskaia/triple_system/5602579_AO
     full_time=(end_mjd-start_mjd)*(24.*3600.)
     ntbin=full_time/ds.shape[0]
     a_t = (np.arange(ds.shape[0]) * ntbin * u.s)
-    a_t = (np.arange(ds.shape[0]) * ntbin * u.s)
     if 'AO' in filenpz:
         a_f = np.linspace(center_frequency+bw/2,center_frequency-bw/2, ds.shape[1]) * u.MHz
         ds=np.flip(ds, axis=1)
