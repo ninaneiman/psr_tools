@@ -261,12 +261,16 @@ def fun_interp(ds, mjd, f, t_ed, f_ed, t_len, f_len, ns=None):
     t_int - new time axis (float)
     nI_new - interpolated ns
     '''
-    fun=interpolate.interp2d(f, mjd, ds, kind='linear')
+    fun=interpolate.RegularGridInterpolator((mjd,f), ds, method='linear')
     new_ntbin=(t_ed[1].value-t_ed[0].value)/(t_len)
     t_int = np.arange(t_ed[0].value,t_ed[1].value, new_ntbin)
     new_nfbin=(f_ed[1].value-f_ed[0].value)/(f_len-1)
     f_new = np.arange(f_ed[0].value,f_ed[1].value+new_nfbin, new_nfbin)
-    I_new = fun(f_new, t_int)
+
+    new_t_grid, new_f_grid = np.meshgrid(t_int, f_new, indexing="ij")
+    new_points = np.array([new_t_grid.ravel(), new_f_grid.ravel()]).T
+    I_new = fun(new_points).reshape(len(t_int), len(f_new))
+    #I_new = fun((t_int,f_new))
     if ns is None:
         nI_new=np.random.normal(size=np.shape(I_new))*np.std(I_new)/6
     else:
