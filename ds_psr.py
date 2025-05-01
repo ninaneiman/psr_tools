@@ -320,6 +320,9 @@ class Spec(object):
         self.t = t
         self.f = f
         self.nsinfo=ns_info
+        self.bw=np.ptp(f)
+        self.cf=np.mean(f)
+        self.dur=np.diff(stend)*24*60*u.min
         if nI is None:
             self.nI=np.random.normal(size=np.shape(self.I))*np.std(self.I)/6
             self.nsinfo='no noise'
