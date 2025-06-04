@@ -103,6 +103,7 @@ def fit_new_gbt(spec, ntime=1, nfreq=11, par_lims=[0.25,2.5], edge=1.3, ntau=512
     if thth_method=='incoherent':
         chi2_method='Eigen'
     mjd_dur=(spec.stend[1]-spec.stend[0])/ntime
+    ntime=math.trunc(ntime)
     tspecs=[]
     print ('each part is ', mjd_dur*24, 'hour long')
     

@@ -129,7 +129,9 @@ def fun_make_ss(ds, t, f, pad_it=True, npad=3):
     return Is, tau, fd
 
 
-def fun_plot_ss(Is, tau, fd, fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, vmax=None, new_fig=True, figsize=(3,2), dpi=150, cb=True, cmap='viridis'):
+def fun_plot_ss(Is, tau, fd, fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, vmax=None,
+           new_fig=True, figsize=(3,2), dpi=150, cb=True, cmap='viridis',
+           plot_parabola=False, eta=1.0):
     ''' Plots secondary spectrum
     Takes:
     Is  - complex array- secodary specrum array
@@ -165,6 +167,8 @@ def fun_plot_ss(Is, tau, fd, fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, v
     plt.ylabel(tau.unit.to_string('latex'))
     plt.xlim(fd_lim[0], fd_lim[1])
     plt.ylim(tau_lim[0], tau_lim[1])
+    if plot_parabola is True:
+        plt.plot(fd,eta*(fd**2),'r',lw=1, ls='--')
 
 def find_nearest(array, value):
     '''Finds index of the nearest to value number in an array
@@ -362,9 +366,10 @@ class Spec(object):
         return SecSpec(self, Is, tau, fd)   
 
  
-    def plot_ss(self,fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, vmax=None, new_fig=True, figsize=(3,2), dpi=150, cb=True,cmap='viridis'):
+    def plot_ss(self,fd_lim=[-1.5, 1.5], tau_lim=[0.0,1.4], vmin=None, vmax=None, new_fig=True, figsize=(3,2), dpi=150, cb=True,cmap='viridis', plot_parabola=False, eta=1):
         '''Plots secondary spectra with pre-defined plotting settings'''
-        fun_plot_ss(self.ss.Is, self.ss.tau, self.ss.fd, fd_lim=fd_lim, tau_lim=tau_lim, vmin=vmin, vmax=vmax, new_fig=new_fig,figsize=figsize, dpi=dpi, cb=cb, cmap=cmap)
+        fun_plot_ss(self.ss.Is, self.ss.tau, self.ss.fd, fd_lim=fd_lim, tau_lim=tau_lim, vmin=vmin, vmax=vmax,
+                new_fig=new_fig,figsize=figsize, dpi=dpi, cb=cb, cmap=cmap, plot_parabola=plot_parabola, eta=eta)
 
     def select(self, time_sel=None, freq_sel=None, freq_idx=None, time_idx=None, pad_it=True, npad=3):
         '''Crops a piece of ds as a sepatate Spec object'''
