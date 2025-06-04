@@ -362,7 +362,7 @@ class Acf(object):
 class Spec(object):
     '''Spectrum object'''
     def __init__(self, I, t, f, stend=[0.0,1.0], nI=None, tel='Unknown', psr='PSRJ0337+1715',pad_it=True, npad=3, ns_info='no noise', subbands=None):
-        '''class to manipilate dynamic spectra
+        '''class to manipulate dynamic spectra
         Usually initiated from npz file using function load_triple_spectra,
         but it can aslo be cropped from other Spec object
         or constracted manualy. While initiated it automatically creates secondary spectra, thus requiring decision about padding.
