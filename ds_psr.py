@@ -334,7 +334,10 @@ def eta_func(f0,A):
     return(A/(f0**2))
 
 class SecSpec(object):
-    '''Seconday spectum object'''
+    '''Seconday spectum object
+    Is - 2d fourier transform of dynamic spectrum (I or ds); type: 2D complex numpy array
+    tau - doppler delay (fourier tranform axis in frequency domain); type: 1D astropy quantity (mus)
+    fd - frindge frequency (fourier transform axis in time domain); type: 1D astropy quentity (mHz)'''
     def __init__(self, ds, Is, tau, fd):
         self.ds = ds
         self.Is = Is
@@ -344,7 +347,10 @@ class SecSpec(object):
         return "<Secondary spectrum>"
 
 class Acf(object):
-    '''Autocorrelation of the dynamic spectrum and its axes'''
+    '''Autocorrelation of the dynamic spectrum and its axes
+    acf - autocorrelation function itself (2D complex np array)
+    lt - time lag; (acf axis in time domain); type: 1D astropy quantity (min)
+    lf - frequency lag (acf axis in frequency domain); type: 1D astropy quantity (MHz)'''
     def __init__(self, acf, lt, lf):
         self.acf=acf
         self.lt=lt
