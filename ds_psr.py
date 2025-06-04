@@ -284,6 +284,49 @@ def fun_interp(ds, mjd, f, t_ed, f_ed, t_len, f_len, ns=None):
     return I_new, f_new, t_sec_new, t_int, nI_new
 
 
+def get_lt_lf(spec):
+    Nf = len(spec.f)
+    df = spec.bw / (Nf - 1)
+    lag_chanf = np.fft.fftshift(np.fft.fftfreq(Nf))*Nf
+    lags_freq = lag_chanf *df
+    Nt = len(spec.t)
+    dt = (spec.t[-1] - spec.t[0]) / (Nt - 1)
+    lag_chant = np.fft.fftshift(np.fft.fftfreq(Nt))*Nt
+    lags_time = lag_chant *dt
+    return lags_time, lags_freq
+
+def get_acf(spec):
+    ac_ss=np.abs((np.fft.fft2(spec.I)))**2
+    acf=(np.fft.fftshift(np.fft.ifft2(ac_ss))).real.T
+    lags_time, lags_freq=get_lt_lf(spec)
+    return acf, lags_time, lags_freq
+
+def cut_acf(acf, lags_time, lags_freq, lt_cutoff=4000,lf_cutoff=40, ii=0):
+    
+    ltc=(lags_time[(lags_time.value>-lt_cutoff) & (lags_time.value<lt_cutoff) ]).to(u.min)
+    lfc=lags_freq[(lags_freq.value>-lf_cutoff) & (lags_freq.value<lf_cutoff) ]
+
+    acfc=acf[(lags_freq.value>-lf_cutoff) & (lags_freq.value<lf_cutoff), :]
+    acfc=acfc[:, (lags_time.value>-lt_cutoff) & (lags_time.value<lt_cutoff)]
+
+    dtau0=np.argmin(np.abs(ltc))
+    dnu0=np.argmin(np.abs(lfc))
+    ii=ii
+    acfc[dnu0,dtau0]=np.nan
+    acfc[dnu0-ii:dnu0+ii,dtau0-ii:dtau0+ii]=np.nan
+    dfreq_prof=acfc[:,dtau0]-np.nanmedian(acfc[:,dtau0])
+    dtime_prof=acfc[dnu0,:]-np.nanmedian(acfc[dnu0,:])
+    return acfc, ltc, lfc, dtime_prof, dfreq_prof
+
+def plot_acf(acf, lt, lf, new_fig=True, figsize=(3,3), dpi=150):
+    vmin, vmax=np.percentile(acf, [0.1,99.9])
+    if new_fig is True:
+        fig=plt.figure(figsize=figsize, dpi=dpi, facecolor='w', edgecolor='k')
+    plt.imshow(acf, aspect='auto', cmap='viridis', vmin=vmin, vmax=vmax, origin='lower',
+               extent=[lt[0].value,lt[-1].value, lf[0].value,lf[-1].value])
+    plt.xlabel('Time lag, min')
+    plt.ylabel('Freq lag, MHz')
+
 
 ##Curvature evolution with freuquency
 def eta_func(f0,A):
@@ -299,6 +342,15 @@ class SecSpec(object):
         self.fd = fd
     def __repr__(self):
         return "<Secondary spectrum>"
+
+class Acf(object):
+    '''Autocorrelation of the dynamic spectrum and its axes'''
+    def __init__(self, acf, lt, lf):
+        self.acf=acf
+        self.lt=lt
+        self.lf=lf
+    def __repr__(self):
+        return "<ACF>"
 
 
 class Spec(object):
@@ -348,6 +400,7 @@ class Spec(object):
         self.tel=tel
         self.psr=psr
         self.ss = self.make_ss(pad_it, npad)
+        self.acf = self.make_acf()
     def __repr__(self):
         times=(self.stend[1]-self.stend[0])*24.
         
@@ -370,6 +423,15 @@ class Spec(object):
         '''Plots secondary spectra with pre-defined plotting settings'''
         fun_plot_ss(self.ss.Is, self.ss.tau, self.ss.fd, fd_lim=fd_lim, tau_lim=tau_lim, vmin=vmin, vmax=vmax,
                 new_fig=new_fig,figsize=figsize, dpi=dpi, cb=cb, cmap=cmap, plot_parabola=plot_parabola, eta=eta)
+
+    def make_acf(self):
+        '''Makes autocorrlation function and loads it to Acf object'''
+        acf, lt, lf=get_acf(self)
+        return Acf(acf=acf, lt=lt, lf=lf)
+
+    def plot_acf(self, new_fig=True, figsize=(3,3), dpi=150):
+        '''Plots acf'''
+        plot_acf(self.acf.acf, self.acf.lt, self.acf.lf, new_fig=new_fig, figsize=figsize, dpi=dpi)
 
     def select(self, time_sel=None, freq_sel=None, freq_idx=None, time_idx=None, pad_it=True, npad=3):
         '''Crops a piece of ds as a sepatate Spec object'''
