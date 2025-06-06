@@ -324,7 +324,7 @@ def plot_acf(acf, lt, lf, new_fig=True, figsize=(3,3), dpi=150):
         fig=plt.figure(figsize=figsize, dpi=dpi, facecolor='w', edgecolor='k')
     plt.imshow(acf, aspect='auto', cmap='viridis', vmin=vmin, vmax=vmax, origin='lower',
                extent=[lt[0].value,lt[-1].value, lf[0].value,lf[-1].value])
-    plt.xlabel('Time lag, min')
+    plt.xlabel('Time lag, sec')
     plt.ylabel('Freq lag, MHz')
 
 
